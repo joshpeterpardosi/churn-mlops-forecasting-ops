@@ -1,0 +1,13 @@
+# Python bytecode / packaging artifacts
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Test / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated / downloaded data — raw, validated, features, and source CSV
+# are all produced or downloaded at runtime, never source-controlled.
+data/

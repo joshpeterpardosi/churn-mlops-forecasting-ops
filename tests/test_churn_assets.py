@@ -27,6 +27,24 @@ def test_validated_churn_passes_on_valid_fixture(tmp_path):
     assert df.loc[df["customerID"] == 3, "TotalCharges"].tolist() == [30.0]
 
 
+def test_validated_churn_check_passes_on_tenure_zero_blank_total_charges(tmp_path):
+    result = materialize(
+        [raw_churn, validated_churn, validated_churn_check],
+        resources=_resources(tmp_path),
+        run_config=RunConfig(
+            ops={"raw_churn": RawChurnConfig(source_path="tests/fixtures/tiny_churn_tenure_zero.csv")}
+        ),
+    )
+    assert result.success
+    check_result = result.get_asset_check_evaluations()[0]
+    assert check_result.passed
+
+    df = result.output_for_node("validated_churn")
+    row = df[df["customerID"] == 1].iloc[0]
+    assert row["tenure"] == 0
+    assert row["TotalCharges"] == 0.0
+
+
 def test_validated_churn_check_fails_on_invalid_fixture(tmp_path):
     result = materialize(
         [raw_churn, validated_churn, validated_churn_check],

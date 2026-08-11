@@ -1,0 +1,3 @@
+customerID,tenure,MonthlyCharges,TotalCharges,Contract,InternetService,PaymentMethod,TechSupport,Churn
+1,0,50.0,,Month-to-month,DSL,Electronic check,No,No
+2,8,65.0,520.0,One year,Fiber optic,Bank transfer,Yes,No

@@ -2,12 +2,22 @@ import pandas as pd
 
 REQUIRED_COLUMNS = ["customerID", "tenure", "MonthlyCharges", "TotalCharges", "Churn"]
 
+# Columns feature_table needs that only require a presence check here (no
+# null/range validation) — see spec Components §2.
+PRESENCE_ONLY_COLUMNS = ["Contract", "InternetService", "PaymentMethod", "TechSupport"]
+
 
 def clean_total_charges(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["TotalCharges"] = df["TotalCharges"].astype(str).str.strip()
     df["TotalCharges"] = df["TotalCharges"].replace("", None)
     df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
+
+    # Real Telco data has blank TotalCharges on every tenure == 0 row
+    # (brand-new customers with no billing history yet). Impute those to
+    # 0.0; every other blank stays null and is rejected by validate_churn.
+    zero_tenure_blank = (df["tenure"] == 0) & df["TotalCharges"].isna()
+    df.loc[zero_tenure_blank, "TotalCharges"] = 0.0
     return df
 
 
@@ -19,7 +29,7 @@ def map_churn_label(df: pd.DataFrame) -> pd.DataFrame:
 
 def validate_churn(df: pd.DataFrame) -> list[str]:
     errors: list[str] = []
-    missing_cols = [c for c in REQUIRED_COLUMNS if c not in df.columns]
+    missing_cols = [c for c in REQUIRED_COLUMNS + PRESENCE_ONLY_COLUMNS if c not in df.columns]
     if missing_cols:
         errors.append(f"missing columns: {missing_cols}")
         return errors
