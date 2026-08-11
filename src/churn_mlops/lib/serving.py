@@ -27,3 +27,10 @@ class CategoricalCastingModel(mlflow.pyfunc.PythonModel):
             if col in df.columns:
                 df[col] = df[col].astype("category")
         return self.model.predict(df)
+
+    def predict_proba(self, context, model_input: pd.DataFrame, params=None):
+        df = model_input.copy()
+        for col in self.categorical_columns:
+            if col in df.columns:
+                df[col] = df[col].astype("category")
+        return self.model.predict_proba(df)[:, 1]

@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from churn_mlops.lib.serving import CategoricalCastingModel
@@ -59,3 +60,26 @@ def test_predict_skips_categorical_columns_absent_from_input():
     assert inner.seen_dtypes["Contract"].name == "category"
     assert "NotPresent" not in inner.seen_dtypes
     assert len(result) == 1
+
+
+class _RecordingProbaModel:
+    """Stub standing in for a fitted LightGBM classifier's predict_proba."""
+
+    def __init__(self):
+        self.seen_dtypes = None
+
+    def predict_proba(self, df):
+        self.seen_dtypes = dict(df.dtypes)
+        n = df.shape[0]
+        return np.column_stack([np.full(n, 0.3), np.full(n, 0.7)])
+
+
+def test_predict_proba_casts_categorical_columns_and_returns_positive_class():
+    inner = _RecordingProbaModel()
+    wrapped = CategoricalCastingModel(inner, categorical_columns=["Contract"])
+    plain_input = pd.DataFrame({"Contract": ["Month-to-month", "One year"], "tenure": [1, 2]})
+
+    result = wrapped.predict_proba(None, plain_input)
+
+    assert inner.seen_dtypes["Contract"].name == "category"
+    assert list(result) == [0.7, 0.7]
