@@ -19,6 +19,16 @@ original intent, both fixed in code and reflected here:
    categorical casting). Fixed by having `train_churn_model` also return
    the transformed test feature frame, and having the `churn_model` asset
    log a signature + input example via `mlflow.models.infer_signature`.
+   **Correction (sub-project 3's final review):** this only fixed half the
+   problem. Logging a signature records the expected schema but doesn't
+   remove the categorical-cast obligation — the model's own logged
+   `input_example` still raised the same `ValueError` when predicted
+   against, because MLflow round-trips the example through JSON and loses
+   the `category` dtype. The actual fix (applied in sub-project 3) wraps
+   the model in an `mlflow.pyfunc.PythonModel` that casts the categorical
+   columns internally before predicting, so the logged signature is
+   honest and callers pass plain values with no hidden preprocessing
+   contract to remember.
 2. **Features selected by subtraction, not by an explicit allowlist.** Any
    future column added to `feature_table` would have silently become a
    model feature — the same risk class the data layer's label-leakage bug

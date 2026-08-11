@@ -1,9 +1,60 @@
 # Forecast Model — Design Spec
 
 **Date:** 2026-08-11
-**Status:** Approved, pending implementation plan
+**Status:** Approved, implemented, amended post-review (see below)
 **Parent spec:** [../../../IDEA.md](../../../IDEA.md)
 **Sub-project:** 3 of 6 (forecast model — consumes the data layer's `validated_mrr` and `feature_table`)
+
+## Amendment (2026-08-11, post-implementation review)
+
+The final whole-branch review verified the implementation is correct and
+well-built — the headline RMSE (38.96) initially looked alarming next to
+the full dataset's `target_mrr` std (31.75), but that comparison turned
+out to be invalid (the model is scored on a held-out set with a different
+distribution than the full table, not the population the std was computed
+over). Decomposed by row type, the model is near-optimal on the learnable
+part (RMSE 1.98 on non-zero-target rows, ~2.8% error, matching the
+synthetic data's own injected noise floor) and beats realistic constant
+baselines by ~10% overall. Two real findings did come out of the
+investigation, both addressed here:
+
+1. **Known limitation: the time-based split structurally starves training
+   of churn events.** A churned customer's terminal zero-MRR row is by
+   construction their series' last row, and the split holds out each
+   customer's last row as test — so churn events land almost entirely in
+   test (21.60% of test rows, measured on the real data) and almost never
+   in train (0.046% of train rows). The model has ~94 training examples of
+   a drop-to-zero versus 1,272 test cases of it, and those 1,272 rows
+   account for 99.8% of total squared error. This is not a bug — the code
+   implements the spec's split exactly as designed, and holding out each
+   customer's genuinely-last observation is standard time-series practice
+   — but it means RMSE alone is dominated by a subpopulation the model
+   was given almost no opportunity to learn. **Decision (human-confirmed):
+   keep the split as designed** rather than redesign it (e.g. a
+   random customer-level holdout that spreads churn events across both
+   sets) — the real constraint is low churn-event volume in this dataset,
+   not a split defect, and redesigning would change what "time-based
+   split" means without necessarily fixing the underlying data scarcity.
+2. **Promotion needs an interpretable reference point.** Because RMSE is
+   dominated by the hard-to-learn subpopulation above, comparing RMSE
+   across retrains (relevant once sub-project 5's retrain sensor exists)
+   risks being driven by how many churned customers happened to land in
+   test, not by genuine model improvement. Fixed by also logging a
+   persistence-baseline metric (`baseline_rmse`, predicting `lag_1`
+   directly) alongside `rmse`/`mae`, so both the current result and future
+   retrain comparisons have something to be interpreted against.
+3. **Serving contract, corrected together with the churn model's own
+   Amendment:** the registered model's logged signature initially declared
+   the four categorical columns as plain strings but the model was fit on
+   pandas `category` dtype — predicting with the signature's own logged
+   `input_example` raised `ValueError: train and valid dataset
+   categorical_feature do not match`, the same class of gap the churn
+   model spec's Amendment §1 originally claimed was fully fixed by
+   signature logging alone (it wasn't — see that spec's correction). Fixed
+   here and in the churn model by wrapping both models in an
+   `mlflow.pyfunc.PythonModel` that casts the categorical columns
+   internally before predicting, so the logged signature is honest and a
+   caller needs no hidden preprocessing step.
 
 ## Purpose
 
