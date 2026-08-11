@@ -1,0 +1,2 @@
+customerID,tenure,MonthlyCharges,TotalCharges,Contract,InternetService,PaymentMethod,TechSupport,Churn
+1,-3,50.0,250.0,Month-to-month,DSL,Electronic check,No,Yes
