@@ -38,8 +38,10 @@ def train_forecast_model(
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
+    baseline_rmse = float(mean_squared_error(y_test, X_test["lag_1"]) ** 0.5)
     metrics = {
         "rmse": float(mean_squared_error(y_test, y_pred) ** 0.5),
         "mae": float(mean_absolute_error(y_test, y_pred)),
+        "baseline_rmse": baseline_rmse,
     }
     return model, metrics, X_test

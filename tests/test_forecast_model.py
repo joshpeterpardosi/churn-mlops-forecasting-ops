@@ -31,9 +31,10 @@ def test_train_forecast_model_returns_expected_metrics():
     df = _synthetic_forecast_df()
     model, metrics, X_test = train_forecast_model(df)
     assert isinstance(model, LGBMRegressor)
-    assert set(metrics.keys()) == {"rmse", "mae"}
+    assert set(metrics.keys()) == {"rmse", "mae", "baseline_rmse"}
     assert metrics["rmse"] >= 0
     assert metrics["mae"] >= 0
+    assert metrics["baseline_rmse"] >= 0
 
 
 def test_time_split_respects_order_per_customer():
