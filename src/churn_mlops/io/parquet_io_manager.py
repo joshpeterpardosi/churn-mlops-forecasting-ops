@@ -11,10 +11,10 @@ class ParquetIOManager(IOManager):
         return os.path.join(self.base_dir, f"{name}.parquet")
 
     def handle_output(self, context: OutputContext, obj: pd.DataFrame):
-        path = self._path_for_name(context.name)
+        path = self._path_for_name(context.asset_key.path[-1])
         os.makedirs(os.path.dirname(path), exist_ok=True)
         obj.to_parquet(path, index=False)
 
     def load_input(self, context: InputContext) -> pd.DataFrame:
-        path = self._path_for_name(context.upstream_output.name)
+        path = self._path_for_name(context.upstream_output.asset_key.path[-1])
         return pd.read_parquet(path)
