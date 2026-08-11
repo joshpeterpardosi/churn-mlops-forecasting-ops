@@ -117,3 +117,19 @@ def test_forecast_mrr_rejects_horizon_out_of_range(tmp_path, monkeypatch):
 
     assert client.get("/forecast/mrr", params={"horizon": 0}).status_code == 422
     assert client.get("/forecast/mrr", params={"horizon": 25}).status_code == 422
+
+
+def test_lifespan_sets_mlflow_tracking_uri_before_loading_models(monkeypatch):
+    calls = []
+    monkeypatch.setattr(app_module.mlflow, "set_tracking_uri", lambda uri: calls.append(uri))
+
+    class _FakeLoaded:
+        def unwrap_python_model(self):
+            return object()
+
+    monkeypatch.setattr(app_module.mlflow.pyfunc, "load_model", lambda uri: _FakeLoaded())
+
+    with TestClient(app_module.app):
+        pass
+
+    assert calls == [app_module.MLFLOW_TRACKING_URI]

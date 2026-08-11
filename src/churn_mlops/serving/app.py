@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
+import mlflow
 import mlflow.pyfunc
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
@@ -12,6 +13,7 @@ from churn_mlops.serving.schemas import ChurnPredictRequest, ChurnPredictRespons
 
 logger = logging.getLogger(__name__)
 
+MLFLOW_TRACKING_URI = "sqlite:///mlflow.db"
 CHURN_MODEL_URI = "models:/churn_model@production"
 FORECAST_MODEL_URI = "models:/forecast_model@production"
 FORECAST_FEATURES_PATH = "data/features/forecast_features.parquet"
@@ -21,6 +23,8 @@ FORECAST_FEATURES_PATH = "data/features/forecast_features.parquet"
 async def lifespan(app: FastAPI):
     app.state.churn_model = None
     app.state.forecast_model = None
+
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
     try:
         loaded = mlflow.pyfunc.load_model(CHURN_MODEL_URI)
