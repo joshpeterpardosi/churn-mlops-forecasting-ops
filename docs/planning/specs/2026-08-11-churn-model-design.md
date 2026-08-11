@@ -31,7 +31,9 @@ knowing which run produced it.
   precision, recall, and F1 are also logged, but ROC-AUC drives promotion
 - MLflow backend: local SQLite-backed tracking store
   (`sqlite:///mlflow.db`, repo root, gitignored) with a local artifact root
-  (`./mlartifacts/`, also gitignored). This is queried directly by the
+  (`./mlruns/`, also gitignored — MLflow 3.x's actual default for a
+  SQLite-backed store; this spec originally said `./mlartifacts/`, amended
+  post-implementation to match reality). This is queried directly by the
   MLflow Python client — **no `mlflow server` process is required** for
   the Dagster asset to run. A `docker-compose`-managed `mlflow server` (per
   IDEA.md) is for the UI and for other services to reach later; it is not
