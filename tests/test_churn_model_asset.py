@@ -1,8 +1,11 @@
+from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
 from dagster import RunConfig, asset, materialize
 from mlflow.tracking import MlflowClient
 
+import churn_mlops.assets.churn_model as churn_model_module
 from churn_mlops.assets.churn_model import MlflowConfig, churn_model
 
 
@@ -40,6 +43,69 @@ def test_first_run_registers_and_promotes(tmp_path):
 
     assert result.success
     output = result.output_for_node("churn_model")
+    assert output["promoted"] is True
+
+    client = MlflowClient(tracking_uri=tracking_uri)
+    production_version = client.get_model_version_by_alias("churn_model", "production")
+    assert production_version.version == output["version"]
+
+
+def _fitted_stub_model():
+    from lightgbm import LGBMClassifier
+
+    model = LGBMClassifier(n_estimators=2, max_depth=2)
+    model.fit(pd.DataFrame({"a": [0, 1, 0, 1]}), [0, 1, 0, 1])
+    return model
+
+
+def _fixed_metrics(roc_auc):
+    return {"roc_auc": roc_auc, "accuracy": roc_auc, "precision": roc_auc, "recall": roc_auc, "f1": roc_auc}
+
+
+def test_worse_run_does_not_promote(tmp_path):
+    tracking_uri = f"sqlite:///{tmp_path / 'mlflow.db'}"
+    run_config = RunConfig(ops={"churn_model": MlflowConfig(tracking_uri=tracking_uri)})
+
+    with patch.object(
+        churn_model_module, "train_churn_model",
+        return_value=(_fitted_stub_model(), _fixed_metrics(0.70)),
+    ):
+        first = materialize([_stub_feature_table, churn_model], run_config=run_config)
+    assert first.success
+    first_version = first.output_for_node("churn_model")["version"]
+
+    with patch.object(
+        churn_model_module, "train_churn_model",
+        return_value=(_fitted_stub_model(), _fixed_metrics(0.60)),
+    ):
+        second = materialize([_stub_feature_table, churn_model], run_config=run_config)
+    assert second.success
+    output = second.output_for_node("churn_model")
+    assert output["promoted"] is False
+
+    client = MlflowClient(tracking_uri=tracking_uri)
+    production_version = client.get_model_version_by_alias("churn_model", "production")
+    assert production_version.version == first_version
+    assert production_version.version != output["version"]
+
+
+def test_better_run_promotes_and_replaces(tmp_path):
+    tracking_uri = f"sqlite:///{tmp_path / 'mlflow.db'}"
+    run_config = RunConfig(ops={"churn_model": MlflowConfig(tracking_uri=tracking_uri)})
+
+    with patch.object(
+        churn_model_module, "train_churn_model",
+        return_value=(_fitted_stub_model(), _fixed_metrics(0.70)),
+    ):
+        materialize([_stub_feature_table, churn_model], run_config=run_config)
+
+    with patch.object(
+        churn_model_module, "train_churn_model",
+        return_value=(_fitted_stub_model(), _fixed_metrics(0.85)),
+    ):
+        second = materialize([_stub_feature_table, churn_model], run_config=run_config)
+    assert second.success
+    output = second.output_for_node("churn_model")
     assert output["promoted"] is True
 
     client = MlflowClient(tracking_uri=tracking_uri)
