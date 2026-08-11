@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+import mlflow
 import numpy as np
 import pandas as pd
 from dagster import RunConfig, asset, materialize
@@ -62,13 +63,19 @@ def _fixed_metrics(roc_auc):
     return {"roc_auc": roc_auc, "accuracy": roc_auc, "precision": roc_auc, "recall": roc_auc, "f1": roc_auc}
 
 
+def _stub_train_return(roc_auc):
+    model = _fitted_stub_model()
+    X_test = pd.DataFrame({"a": [0, 1]})
+    return model, _fixed_metrics(roc_auc), X_test
+
+
 def test_worse_run_does_not_promote(tmp_path):
     tracking_uri = f"sqlite:///{tmp_path / 'mlflow.db'}"
     run_config = RunConfig(ops={"churn_model": MlflowConfig(tracking_uri=tracking_uri)})
 
     with patch.object(
         churn_model_module, "train_churn_model",
-        return_value=(_fitted_stub_model(), _fixed_metrics(0.70)),
+        return_value=_stub_train_return(0.70),
     ):
         first = materialize([_stub_feature_table, churn_model], run_config=run_config)
     assert first.success
@@ -76,7 +83,7 @@ def test_worse_run_does_not_promote(tmp_path):
 
     with patch.object(
         churn_model_module, "train_churn_model",
-        return_value=(_fitted_stub_model(), _fixed_metrics(0.60)),
+        return_value=_stub_train_return(0.60),
     ):
         second = materialize([_stub_feature_table, churn_model], run_config=run_config)
     assert second.success
@@ -95,13 +102,13 @@ def test_better_run_promotes_and_replaces(tmp_path):
 
     with patch.object(
         churn_model_module, "train_churn_model",
-        return_value=(_fitted_stub_model(), _fixed_metrics(0.70)),
+        return_value=_stub_train_return(0.70),
     ):
         materialize([_stub_feature_table, churn_model], run_config=run_config)
 
     with patch.object(
         churn_model_module, "train_churn_model",
-        return_value=(_fitted_stub_model(), _fixed_metrics(0.85)),
+        return_value=_stub_train_return(0.85),
     ):
         second = materialize([_stub_feature_table, churn_model], run_config=run_config)
     assert second.success
@@ -111,3 +118,20 @@ def test_better_run_promotes_and_replaces(tmp_path):
     client = MlflowClient(tracking_uri=tracking_uri)
     production_version = client.get_model_version_by_alias("churn_model", "production")
     assert production_version.version == output["version"]
+
+
+def test_logged_model_has_signature(tmp_path):
+    tracking_uri = f"sqlite:///{tmp_path / 'mlflow.db'}"
+
+    result = materialize(
+        [_stub_feature_table, churn_model],
+        run_config=RunConfig(ops={"churn_model": MlflowConfig(tracking_uri=tracking_uri)}),
+    )
+
+    assert result.success
+    output = result.output_for_node("churn_model")
+
+    mlflow.set_tracking_uri(tracking_uri)
+    model_uri = f"models:/churn_model/{output['version']}"
+    model_info = mlflow.models.get_model_info(model_uri)
+    assert model_info.signature is not None

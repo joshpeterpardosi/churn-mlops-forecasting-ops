@@ -33,7 +33,7 @@ DEFAULT_PARAMS = {
 
 def train_churn_model(
     feature_df: pd.DataFrame, params: dict[str, Any] | None = None
-) -> tuple[LGBMClassifier, dict[str, float]]:
+) -> tuple[LGBMClassifier, dict[str, float], pd.DataFrame]:
     params = dict(DEFAULT_PARAMS) if params is None else params
 
     df = feature_df.copy()
@@ -60,7 +60,7 @@ def train_churn_model(
         "recall": float(recall_score(y_test, y_pred, zero_division=0)),
         "f1": float(f1_score(y_test, y_pred, zero_division=0)),
     }
-    return model, metrics
+    return model, metrics, X_test
 
 
 def get_production_roc_auc(client, model_name: str) -> float | None:

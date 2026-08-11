@@ -29,16 +29,17 @@ def _synthetic_feature_table(n=200, seed=0):
 
 def test_train_churn_model_returns_expected_metrics():
     df = _synthetic_feature_table()
-    model, metrics = train_churn_model(df)
+    model, metrics, X_test = train_churn_model(df)
     assert isinstance(model, LGBMClassifier)
     assert set(metrics.keys()) == {"roc_auc", "accuracy", "precision", "recall", "f1"}
     for value in metrics.values():
         assert 0.0 <= value <= 1.0
+    assert list(X_test.columns) == FEATURE_COLUMNS
 
 
 def test_train_churn_model_uses_default_params_when_none_given():
     df = _synthetic_feature_table()
-    model, _ = train_churn_model(df)
+    model, _, _ = train_churn_model(df)
     params = model.get_params()
     assert params["n_estimators"] == 100
     assert params["max_depth"] == 5
@@ -48,9 +49,9 @@ def test_train_churn_model_uses_default_params_when_none_given():
 def test_train_churn_model_ignores_unexpected_extra_columns():
     df = _synthetic_feature_table()
     df["some_future_column"] = 1
-    model, _ = train_churn_model(df)
+    model, _, X_test = train_churn_model(df)
     assert "some_future_column" not in model.feature_name_
-    assert "some_future_column" not in FEATURE_COLUMNS
+    assert "some_future_column" not in X_test.columns
 
 
 def test_get_production_roc_auc_returns_none_when_no_production_version():

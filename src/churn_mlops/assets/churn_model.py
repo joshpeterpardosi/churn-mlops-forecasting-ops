@@ -18,13 +18,20 @@ def churn_model(config: MlflowConfig, feature_table: pd.DataFrame) -> dict:
     mlflow.set_tracking_uri(config.tracking_uri)
     mlflow.set_experiment("churn_model")
 
-    model, metrics = train_churn_model(feature_table)
+    model, metrics, X_eval = train_churn_model(feature_table)
 
     with mlflow.start_run() as run:
         mlflow.log_params(model.get_params())
         mlflow.log_metrics(metrics)
+
+        input_example = X_eval.head(5)
+        signature = mlflow.models.infer_signature(X_eval, model.predict(X_eval))
         model_info = mlflow.lightgbm.log_model(
-            model, artifact_path="model", registered_model_name=MODEL_NAME
+            model,
+            artifact_path="model",
+            registered_model_name=MODEL_NAME,
+            signature=signature,
+            input_example=input_example,
         )
 
         client = MlflowClient(tracking_uri=config.tracking_uri)
