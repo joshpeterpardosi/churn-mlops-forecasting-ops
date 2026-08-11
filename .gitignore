@@ -11,3 +11,6 @@ __pycache__/
 # Generated / downloaded data — raw, validated, features, and source CSV
 # are all produced or downloaded at runtime, never source-controlled.
 data/
+
+# Personal interview prep notes — local only, never pushed.
+interview/
