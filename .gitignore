@@ -14,3 +14,8 @@ data/
 
 # Personal interview prep notes — local only, never pushed.
 interview/
+
+# MLflow tracking store / artifact root — generated at runtime by the
+# churn_model asset and its tests, never source-controlled.
+mlflow.db
+mlruns/
