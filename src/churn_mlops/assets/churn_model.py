@@ -1,11 +1,12 @@
 import mlflow
-import mlflow.lightgbm
+import mlflow.pyfunc
 import pandas as pd
 from dagster import Config, asset
 from mlflow.tracking import MlflowClient
 
-from churn_mlops.lib.churn_model import train_churn_model
+from churn_mlops.lib.churn_model import CATEGORICAL_COLUMNS, train_churn_model
 from churn_mlops.lib.mlflow_registry import promote_if_better
+from churn_mlops.lib.serving import CategoricalCastingModel
 
 MODEL_NAME = "churn_model"
 
@@ -25,14 +26,27 @@ def churn_model(config: MlflowConfig, feature_table: pd.DataFrame) -> dict:
         mlflow.log_params(model.get_params())
         mlflow.log_metrics(metrics)
 
-        input_example = X_eval.head(5)
-        signature = mlflow.models.infer_signature(X_eval, model.predict(X_eval))
-        model_info = mlflow.lightgbm.log_model(
-            model,
+        # X_eval has the categorical columns cast to pandas "category" dtype
+        # (required by LightGBM at fit time). A real caller naturally has
+        # plain object/string dtype data, so the logged signature/example must
+        # describe that plain-dtype contract, not the category-cast one -
+        # otherwise the model's own logged input_example fails to predict
+        # (MLflow's signature has no native "category" type, and the
+        # input_example loses its category dtype on the JSON round-trip
+        # anyway). The wrapper below casts internally so callers don't need
+        # to know about the category-dtype requirement at all.
+        cols_to_uncast = [col for col in CATEGORICAL_COLUMNS if col in X_eval.columns]
+        plain_dtype_example = X_eval.head(5).astype({col: "object" for col in cols_to_uncast})
+        wrapped = CategoricalCastingModel(model, CATEGORICAL_COLUMNS)
+        signature = mlflow.models.infer_signature(
+            plain_dtype_example, wrapped.predict(None, plain_dtype_example)
+        )
+        model_info = mlflow.pyfunc.log_model(
+            python_model=wrapped,
             artifact_path="model",
             registered_model_name=MODEL_NAME,
             signature=signature,
-            input_example=input_example,
+            input_example=plain_dtype_example,
         )
 
         client = MlflowClient(tracking_uri=config.tracking_uri)

@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import mlflow
+import mlflow.pyfunc
 import numpy as np
 import pandas as pd
 from dagster import RunConfig, asset, materialize
@@ -8,6 +9,7 @@ from mlflow.tracking import MlflowClient
 
 import churn_mlops.assets.churn_model as churn_model_module
 from churn_mlops.assets.churn_model import MlflowConfig, churn_model
+from churn_mlops.lib.churn_model import CATEGORICAL_COLUMNS, FEATURE_COLUMNS
 
 
 def _synthetic_feature_table(n=200, seed=0):
@@ -139,3 +141,32 @@ def test_logged_model_has_signature(tmp_path, monkeypatch):
     model_uri = f"models:/churn_model/{output['version']}"
     model_info = mlflow.models.get_model_info(model_uri)
     assert model_info.signature is not None
+
+
+def test_loaded_model_predicts_on_plain_dtype_input(tmp_path, monkeypatch):
+    """Reproduces the reviewer's finding: predicting on plain object/string
+    dtype input (how a real caller / the model's own logged input_example
+    naturally looks) must succeed, not raise LightGBM's
+    'train and valid dataset categorical_feature do not match'.
+    """
+    monkeypatch.chdir(tmp_path)
+    tracking_uri = f"sqlite:///{tmp_path / 'mlflow.db'}"
+
+    result = materialize(
+        [_stub_feature_table, churn_model],
+        run_config=RunConfig(ops={"churn_model": MlflowConfig(tracking_uri=tracking_uri)}),
+    )
+    assert result.success
+    output = result.output_for_node("churn_model")
+
+    mlflow.set_tracking_uri(tracking_uri)
+    loaded = mlflow.pyfunc.load_model(f"models:/churn_model/{output['version']}")
+
+    plain_input = _synthetic_feature_table(n=10, seed=99)[FEATURE_COLUMNS]
+    for col in CATEGORICAL_COLUMNS:
+        assert plain_input[col].dtype == object, f"{col} must be plain-dtype for this test"
+
+    predictions = loaded.predict(plain_input)
+
+    assert len(predictions) == 10
+    assert set(np.unique(predictions)).issubset({0, 1})
