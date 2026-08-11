@@ -1,5 +1,5 @@
 from dagster import Definitions
-from churn_mlops.assets import churn, mrr, features
+from churn_mlops.assets import churn, mrr, features, churn_model as churn_model_assets
 from churn_mlops.io.parquet_io_manager import ParquetIOManager
 
 defs = Definitions(
@@ -9,6 +9,7 @@ defs = Definitions(
         mrr.synthetic_mrr_raw,
         mrr.validated_mrr,
         features.feature_table,
+        churn_model_assets.churn_model,
     ],
     asset_checks=[churn.validated_churn_check, mrr.validated_mrr_check],
     resources={
