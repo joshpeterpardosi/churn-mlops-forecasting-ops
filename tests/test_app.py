@@ -1,6 +1,7 @@
 import pandas as pd
 from fastapi.testclient import TestClient
 
+import churn_mlops.serving.app as app_module
 from churn_mlops.serving.app import app
 
 
@@ -48,3 +49,71 @@ def test_predict_churn_returns_422_on_missing_field():
     response = client.post("/predict/churn", json=payload)
 
     assert response.status_code == 422
+
+
+class _FakeForecastModel:
+    def predict(self, context, df: pd.DataFrame):
+        return df["lag_1"] + 1.0
+
+
+def _write_forecast_features_parquet(tmp_path):
+    df = pd.DataFrame({
+        "customerID": ["a", "a", "b"],
+        "month": [3, 4, 3],
+        "lag_1": [50.0, 52.0, 30.0],
+        "lag_2": [48.0, 50.0, 29.0],
+        "lag_3": [47.0, 48.0, 28.0],
+        "rolling_3mo_mean": [48.33, 50.0, 29.0],
+        "Contract": ["Month-to-month", "Month-to-month", "One year"],
+        "InternetService": ["DSL", "DSL", "Fiber optic"],
+        "PaymentMethod": ["Electronic check", "Electronic check", "Mailed check"],
+        "TechSupport": ["No", "No", "Yes"],
+        "target_mrr": [52.0, 53.0, 31.0],
+    })
+    path = tmp_path / "forecast_features.parquet"
+    df.to_parquet(path)
+    return str(path)
+
+
+def test_forecast_mrr_returns_valid_response_when_model_loaded(tmp_path, monkeypatch):
+    monkeypatch.setattr(app_module, "FORECAST_FEATURES_PATH", _write_forecast_features_parquet(tmp_path))
+    app_module.app.state.forecast_model = _FakeForecastModel()
+    client = TestClient(app_module.app)
+
+    response = client.get("/forecast/mrr", params={"horizon": 2})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["horizon"] == 2
+    # customer "a" latest row (month 4, lag_1=52.0) predicts 53.0 then 54.0;
+    # customer "b" only row (month 3, lag_1=30.0) predicts 31.0 then 32.0
+    assert body["forecast_total_mrr"] == 54.0 + 32.0
+
+
+def test_forecast_mrr_returns_503_when_model_not_loaded(tmp_path, monkeypatch):
+    monkeypatch.setattr(app_module, "FORECAST_FEATURES_PATH", _write_forecast_features_parquet(tmp_path))
+    app_module.app.state.forecast_model = None
+    client = TestClient(app_module.app)
+
+    response = client.get("/forecast/mrr", params={"horizon": 2})
+
+    assert response.status_code == 503
+
+
+def test_forecast_mrr_returns_503_when_parquet_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(app_module, "FORECAST_FEATURES_PATH", str(tmp_path / "does_not_exist.parquet"))
+    app_module.app.state.forecast_model = _FakeForecastModel()
+    client = TestClient(app_module.app)
+
+    response = client.get("/forecast/mrr", params={"horizon": 2})
+
+    assert response.status_code == 503
+
+
+def test_forecast_mrr_rejects_horizon_out_of_range(tmp_path, monkeypatch):
+    monkeypatch.setattr(app_module, "FORECAST_FEATURES_PATH", _write_forecast_features_parquet(tmp_path))
+    app_module.app.state.forecast_model = _FakeForecastModel()
+    client = TestClient(app_module.app)
+
+    assert client.get("/forecast/mrr", params={"horizon": 0}).status_code == 422
+    assert client.get("/forecast/mrr", params={"horizon": 25}).status_code == 422
