@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 from mlflow.exceptions import MlflowException
 
-from churn_mlops.lib.churn_model import train_churn_model, get_production_roc_auc
+from churn_mlops.lib.churn_model import FEATURE_COLUMNS, train_churn_model, get_production_roc_auc
 
 
 def _synthetic_feature_table(n=200, seed=0):
@@ -43,6 +43,14 @@ def test_train_churn_model_uses_default_params_when_none_given():
     assert params["n_estimators"] == 100
     assert params["max_depth"] == 5
     assert params["learning_rate"] == 0.05
+
+
+def test_train_churn_model_ignores_unexpected_extra_columns():
+    df = _synthetic_feature_table()
+    df["some_future_column"] = 1
+    model, _ = train_churn_model(df)
+    assert "some_future_column" not in model.feature_name_
+    assert "some_future_column" not in FEATURE_COLUMNS
 
 
 def test_get_production_roc_auc_returns_none_when_no_production_version():

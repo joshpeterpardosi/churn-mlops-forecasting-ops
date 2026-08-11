@@ -8,6 +8,21 @@ from sklearn.model_selection import train_test_split
 
 CATEGORICAL_COLUMNS = ["Contract", "InternetService", "PaymentMethod", "TechSupport"]
 
+# Explicit feature allowlist: every feature_table column the model is deliberately
+# trained on (everything except customerID and the Churn label). Adding a column to
+# feature_table should never silently become a model feature — it must be added here.
+FEATURE_COLUMNS = [
+    "tenure",
+    "Contract",
+    "MonthlyCharges",
+    "TotalCharges",
+    "InternetService",
+    "PaymentMethod",
+    "TechSupport",
+    "current_mrr",
+    "trailing_3mo_avg_mrr",
+]
+
 DEFAULT_PARAMS = {
     "n_estimators": 100,
     "max_depth": 5,
@@ -21,11 +36,11 @@ def train_churn_model(
 ) -> tuple[LGBMClassifier, dict[str, float]]:
     params = dict(DEFAULT_PARAMS) if params is None else params
 
-    df = feature_df.drop(columns=["customerID"]).copy()
+    df = feature_df.copy()
     for col in CATEGORICAL_COLUMNS:
         df[col] = df[col].astype("category")
 
-    X = df.drop(columns=["Churn"])
+    X = df[FEATURE_COLUMNS]
     y = df["Churn"]
 
     X_train, X_test, y_train, y_test = train_test_split(
