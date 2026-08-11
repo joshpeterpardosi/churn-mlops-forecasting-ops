@@ -1,9 +1,31 @@
 # Churn Model — Design Spec
 
 **Date:** 2026-08-11
-**Status:** Approved, pending implementation plan
+**Status:** Approved, implemented, amended post-review (see below)
 **Parent spec:** [../../../IDEA.md](../../../IDEA.md)
 **Sub-project:** 2 of 6 (churn model — consumes the data layer's `feature_table`)
+
+## Amendment (2026-08-11, post-implementation review)
+
+The final whole-branch review found two Important gaps versus this spec's
+original intent, both fixed in code and reflected here:
+
+1. **No logged model signature.** The spec's stated purpose ("a later
+   serving layer can load 'the current model'") wasn't actually true as
+   first implemented — the registered model had no MLflow signature or
+   input example, and predicting on a raw `feature_table` frame raised
+   `ValueError: train and valid dataset categorical_feature do not match`
+   (LightGBM requires callers to independently reproduce the training-time
+   categorical casting). Fixed by having `train_churn_model` also return
+   the transformed test feature frame, and having the `churn_model` asset
+   log a signature + input example via `mlflow.models.infer_signature`.
+2. **Features selected by subtraction, not by an explicit allowlist.** Any
+   future column added to `feature_table` would have silently become a
+   model feature — the same risk class the data layer's label-leakage bug
+   came from. Fixed with an explicit `FEATURE_COLUMNS` list in
+   `train_churn_model`.
+3. Artifact root corrected from `./mlartifacts/` to `./mlruns/` (MLflow
+   3.x's actual SQLite-backed default) — see the Architecture section.
 
 ## Purpose
 
@@ -63,7 +85,10 @@ feature_table → churn_model (train, log to MLflow, register, promote-if-better
 
 ## Components
 
-1. **`train_churn_model(feature_df, params=DEFAULT_PARAMS) -> (model, metrics)`**
+1. **`train_churn_model(feature_df, params=DEFAULT_PARAMS) -> (model, metrics, X_test)`**
+   (amended post-implementation: also returns the transformed test feature
+   frame, so the asset can log an MLflow model signature — see Amendment
+   below)
    — drops `customerID` (join key, not a feature); casts `Contract`,
    `InternetService`, `PaymentMethod`, `TechSupport` to pandas `category`
    dtype; stratified 80/20 train/test split on `Churn`
