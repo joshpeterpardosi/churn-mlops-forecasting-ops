@@ -1,7 +1,11 @@
 import numpy as np
 import pandas as pd
 from lightgbm import LGBMClassifier
-from churn_mlops.lib.churn_model import train_churn_model
+from unittest.mock import MagicMock
+
+from mlflow.exceptions import MlflowException
+
+from churn_mlops.lib.churn_model import train_churn_model, get_production_roc_auc
 
 
 def _synthetic_feature_table(n=200, seed=0):
@@ -39,3 +43,22 @@ def test_train_churn_model_uses_default_params_when_none_given():
     assert params["n_estimators"] == 100
     assert params["max_depth"] == 5
     assert params["learning_rate"] == 0.05
+
+
+def test_get_production_roc_auc_returns_none_when_no_production_version():
+    client = MagicMock()
+    client.get_model_version_by_alias.side_effect = MlflowException("not found")
+    assert get_production_roc_auc(client, "churn_model") is None
+
+
+def test_get_production_roc_auc_returns_metric_when_production_exists():
+    client = MagicMock()
+    version = MagicMock(run_id="run123")
+    client.get_model_version_by_alias.return_value = version
+    run = MagicMock()
+    run.data.metrics = {"roc_auc": 0.87}
+    client.get_run.return_value = run
+
+    assert get_production_roc_auc(client, "churn_model") == 0.87
+    client.get_model_version_by_alias.assert_called_once_with("churn_model", "production")
+    client.get_run.assert_called_once_with("run123")

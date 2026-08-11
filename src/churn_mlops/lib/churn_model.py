@@ -2,6 +2,7 @@ from typing import Any
 
 import pandas as pd
 from lightgbm import LGBMClassifier
+from mlflow.exceptions import MlflowException
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 
@@ -45,3 +46,12 @@ def train_churn_model(
         "f1": float(f1_score(y_test, y_pred, zero_division=0)),
     }
     return model, metrics
+
+
+def get_production_roc_auc(client, model_name: str) -> float | None:
+    try:
+        version = client.get_model_version_by_alias(model_name, "production")
+    except MlflowException:
+        return None
+    run = client.get_run(version.run_id)
+    return float(run.data.metrics["roc_auc"])
