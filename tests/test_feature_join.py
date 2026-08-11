@@ -1,5 +1,6 @@
 import pandas as pd
 from churn_mlops.lib.feature_join import build_feature_table
+from churn_mlops.lib.mrr_generation import generate_mrr_series
 
 def _churn_df():
     return pd.DataFrame({
@@ -58,3 +59,35 @@ def test_active_customer_current_mrr_unaffected():
     active_row = result[result["customerID"] == "2"].iloc[0]
     assert active_row["Churn"] == 0
     assert active_row["current_mrr"] == 70.0
+
+def test_zero_tenure_churned_customer_current_mrr_is_not_leaked():
+    # Regression: generate_mrr_series floors tenure to max(tenure, 1) when
+    # placing the terminal churn-zero row (mrr_generation.py:9). For a
+    # churned customer with raw tenure == 0, the real MRR observation lands
+    # at month 0 and the terminal zero row lands at month 1 (floored) — not
+    # month 0. A tenure-based exclusion (month == tenure) would drop the
+    # real observation and keep the terminal zero, reintroducing the leak
+    # for this subset. The structural "last row in the group" exclusion
+    # must get this right without any tenure comparison.
+    churn_df = pd.DataFrame({
+        "customerID": ["9"],
+        "tenure": [0],
+        "Contract": ["Month-to-month"],
+        "MonthlyCharges": [80.0],
+        "TotalCharges": [0.0],
+        "InternetService": ["DSL"],
+        "PaymentMethod": ["Electronic check"],
+        "TechSupport": ["No"],
+        "Churn": [1],
+    })
+    mrr_df = generate_mrr_series(churn_df, seed=1)
+
+    rows = mrr_df.sort_values("month").reset_index(drop=True)
+    assert rows["month"].tolist() == [0, 1]
+    assert rows.loc[0, "MRR"] > 0.0
+    assert rows.loc[1, "MRR"] == 0.0
+
+    result = build_feature_table(churn_df, mrr_df)
+    row = result.iloc[0]
+    assert row["current_mrr"] == rows.loc[0, "MRR"]
+    assert row["current_mrr"] != 0.0

@@ -13,14 +13,24 @@ def build_feature_table(churn_df: pd.DataFrame, mrr_df: pd.DataFrame) -> pd.Data
     # aggregating. Including it would make current_mrr == 0 a perfect proxy
     # for Churn == 1 (label leakage) — see spec Components §5. The zero row
     # itself is left untouched in validated_mrr; only this aggregation
-    # excludes it, by using only months strictly before `tenure` for
-    # customers who churned.
-    tenure_lookup = churn_df[["customerID", "tenure", "Churn"]]
-    mrr_with_tenure = mrr_df.merge(tenure_lookup, on="customerID", how="left")
-    terminal_churn_row = (mrr_with_tenure["Churn"] == 1) & (
-        mrr_with_tenure["month"] == mrr_with_tenure["tenure"]
-    )
-    pre_churn_mrr = mrr_with_tenure.loc[~terminal_churn_row, ["customerID", "month", "MRR"]]
+    # excludes it.
+    #
+    # The terminal row is identified structurally — "the last row, by month,
+    # within a churned customer's group" — rather than by recomputing
+    # `month == tenure`. generate_mrr_series floors tenure to
+    # max(tenure, 1) when placing the terminal row (mrr_generation.py), so
+    # for a tenure == 0 churned customer the real observation lands at
+    # month 0 and the terminal zero lands at month 1 (floored) — a raw
+    # tenure comparison drops the wrong row and reintroduces the leak for
+    # that subset. "Last row in the group" holds regardless of any
+    # tenure-flooring quirks upstream, since the generator always appends
+    # the churn-zero row after every pre-churn month it emits.
+    churn_lookup = churn_df[["customerID", "Churn"]]
+    mrr_with_churn = mrr_df.merge(churn_lookup, on="customerID", how="left")
+    sorted_by_group = mrr_with_churn.sort_values(["customerID", "month"]).reset_index(drop=True)
+    is_last_in_group = sorted_by_group.groupby("customerID").cumcount(ascending=False) == 0
+    terminal_churn_row = (sorted_by_group["Churn"] == 1) & is_last_in_group
+    pre_churn_mrr = sorted_by_group.loc[~terminal_churn_row, ["customerID", "month", "MRR"]]
 
     sorted_mrr = pre_churn_mrr.sort_values("month")
 
