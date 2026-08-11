@@ -1,0 +1,10 @@
+# docker-compose.yml
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mlflow.db:/app/mlflow.db
+      - ./mlruns:/app/mlruns
+      - ./data:/app/data
