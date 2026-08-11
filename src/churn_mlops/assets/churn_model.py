@@ -4,7 +4,8 @@ import pandas as pd
 from dagster import Config, asset
 from mlflow.tracking import MlflowClient
 
-from churn_mlops.lib.churn_model import get_production_roc_auc, train_churn_model
+from churn_mlops.lib.churn_model import train_churn_model
+from churn_mlops.lib.mlflow_registry import promote_if_better
 
 MODEL_NAME = "churn_model"
 
@@ -36,11 +37,9 @@ def churn_model(config: MlflowConfig, feature_table: pd.DataFrame) -> dict:
 
         client = MlflowClient(tracking_uri=config.tracking_uri)
         version = model_info.registered_model_version
-        current_production_roc_auc = get_production_roc_auc(client, MODEL_NAME)
-
-        promoted = current_production_roc_auc is None or metrics["roc_auc"] > current_production_roc_auc
-        if promoted:
-            client.set_registered_model_alias(MODEL_NAME, "production", version)
+        promoted = promote_if_better(
+            client, MODEL_NAME, "roc_auc", metrics["roc_auc"], version, higher_is_better=True
+        )
 
         return {
             "run_id": run.info.run_id,
