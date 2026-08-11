@@ -34,7 +34,8 @@ def _stub_feature_table():
     return _synthetic_feature_table()
 
 
-def test_first_run_registers_and_promotes(tmp_path):
+def test_first_run_registers_and_promotes(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     tracking_uri = f"sqlite:///{tmp_path / 'mlflow.db'}"
 
     result = materialize(
@@ -69,7 +70,8 @@ def _stub_train_return(roc_auc):
     return model, _fixed_metrics(roc_auc), X_test
 
 
-def test_worse_run_does_not_promote(tmp_path):
+def test_worse_run_does_not_promote(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     tracking_uri = f"sqlite:///{tmp_path / 'mlflow.db'}"
     run_config = RunConfig(ops={"churn_model": MlflowConfig(tracking_uri=tracking_uri)})
 
@@ -96,7 +98,8 @@ def test_worse_run_does_not_promote(tmp_path):
     assert production_version.version != output["version"]
 
 
-def test_better_run_promotes_and_replaces(tmp_path):
+def test_better_run_promotes_and_replaces(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     tracking_uri = f"sqlite:///{tmp_path / 'mlflow.db'}"
     run_config = RunConfig(ops={"churn_model": MlflowConfig(tracking_uri=tracking_uri)})
 
@@ -120,7 +123,8 @@ def test_better_run_promotes_and_replaces(tmp_path):
     assert production_version.version == output["version"]
 
 
-def test_logged_model_has_signature(tmp_path):
+def test_logged_model_has_signature(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     tracking_uri = f"sqlite:///{tmp_path / 'mlflow.db'}"
 
     result = materialize(
