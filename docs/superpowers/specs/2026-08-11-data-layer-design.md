@@ -1,10 +1,30 @@
 # Data Layer — Design Spec
 
 **Date:** 2026-08-11
-**Status:** Approved, pending implementation plan
+**Status:** Approved, implemented, amended post-review (see below)
 **Parent spec:** [../../../IDEA.md](../../../IDEA.md)
 **Sub-project:** 1 of 6 (data layer — foundation for churn model, forecast model,
 serving, monitoring, CI/CD)
+
+## Amendment (2026-08-11, post-implementation review)
+
+The final whole-branch review found two Critical defects inherited from
+this spec as originally written, both fixed here plus in code:
+
+1. **`TotalCharges` null rule contradicted the real dataset.** The original
+   §Components 2 required both "cleans blank `TotalCharges` strings" and an
+   unconditional null check on `TotalCharges` — but the real Kaggle Telco
+   CSV has blank `TotalCharges` on every `tenure == 0` row (customers with
+   no billing history yet), so the blocking check rejected every real run.
+   Fixed by imputing `TotalCharges = 0.0` for `tenure == 0` during cleaning,
+   keeping the null check strict for every other case.
+2. **`current_mrr` leaked the `Churn` label.** MRR drops to exactly 0 at
+   the churn month only when `Churn == 1`, and the original §Components 5
+   defined `current_mrr` as the latest MRR value including that terminal
+   row — making `current_mrr == 0` a perfect proxy for `Churn == 1`. Fixed
+   by computing `current_mrr` / `trailing_3mo_avg_mrr` from months before
+   the churn event only; the terminal zero row stays in `validated_mrr`
+   for the forecast model, which needs it.
 
 ## Purpose
 
@@ -43,10 +63,16 @@ raw_churn → validated_churn → synthetic_mrr_raw → validated_mrr → featur
 
 1. **raw_churn** — loads `data/source/telco_churn.csv` as-is into
    `raw_churn.parquet`. No transformation.
-2. **validated_churn** — schema check (expected columns/types), null check
-   (`tenure`, `MonthlyCharges`, `TotalCharges`, `Churn` required),
-   range check (`tenure ≥ 0`, charges `≥ 0`). Cleans `TotalCharges` blank
-   strings (Telco's known dirty field). Maps `Churn` Yes/No → 1/0.
+2. **validated_churn** — schema check (expected columns/types, covering every
+   column `feature_table` depends on: `tenure`, `MonthlyCharges`,
+   `TotalCharges`, `Churn`, `Contract`, `InternetService`, `PaymentMethod`,
+   `TechSupport`), null check (`tenure`, `MonthlyCharges`, `Churn` required;
+   `TotalCharges` required except when `tenure == 0`, where a blank value is
+   imputed to `0.0` during cleaning rather than treated as missing —
+   brand-new customers have no billing history yet), range check
+   (`tenure ≥ 0`, charges `≥ 0`). Cleans `TotalCharges` blank strings
+   (Telco's known dirty field; `tenure == 0` rows imputed to `0.0`, all
+   other blanks remain null and fail the check). Maps `Churn` Yes/No → 1/0.
 3. **synthetic_mrr_raw** — generates a monthly MRR series per customer from
    `validated_churn`:
    - MRR = `MonthlyCharges`, flat from month 0 to `tenure - 1`
@@ -59,7 +85,13 @@ raw_churn → validated_churn → synthetic_mrr_raw → validated_mrr → featur
 5. **feature_table** — joins `validated_churn` (curated subset: `tenure`,
    `Contract`, `MonthlyCharges`, `TotalCharges`, `InternetService`,
    `PaymentMethod`, `TechSupport`, `Churn`) with MRR-derived features
-   (current MRR, trailing-3-month average) on `customerID`.
+   computed from months *before* the churn event only (current MRR = latest
+   MRR value at month `< tenure`, trailing-3-month average over the same
+   pre-churn window) on `customerID`. The terminal churn-month zero row in
+   `validated_mrr` is deliberately excluded from these features — including
+   it would make `current_mrr` a perfect proxy for `Churn` (`current_mrr ==
+   0` iff `Churn == 1`), leaking the training target into the feature set.
+   The zero row stays in `validated_mrr` itself for the forecast model.
 
 ## Data Flow
 
