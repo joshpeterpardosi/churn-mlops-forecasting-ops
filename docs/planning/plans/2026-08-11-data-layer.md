@@ -1,6 +1,6 @@
 # Data Layer Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For implementers:** execute this plan task-by-task, with a review checkpoint after each task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the Dagster asset pipeline (raw_churn → validated_churn → synthetic_mrr_raw → validated_mrr → feature_table) that turns the Telco Customer Churn CSV + a generated MRR series into a single feature table.
 
