@@ -1,7 +1,7 @@
 [project]
 name = "churn-mlops-forecasting-ops"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
   "dagster>=1.7",
   "dagster-webserver>=1.7",
@@ -29,6 +29,12 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "C4", "B", "RUF"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
+[tool.dagster]
+module_name = "churn_mlops.definitions"
 
 [build-system]
 requires = ["setuptools>=68"]

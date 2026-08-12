@@ -47,10 +47,43 @@ Design docs and implementation plans for each stage are in
 
 ```bash
 python -m venv .venv
-.venv/Scripts/activate  # .venv/bin/activate on macOS/Linux
+
+# activate the venv:
+source .venv/Scripts/activate   # git-bash on Windows, or macOS/Linux (.venv/bin/activate)
+.venv\Scripts\activate          # cmd.exe / PowerShell on Windows
+
 pip install -r requirements-lock.txt
 pip install --no-deps -e .
 ```
+
+## Prerequisites
+
+Before `dagster dev` or the serving API will actually work end to end, a
+fresh clone needs two things that are gitignored (never source-controlled)
+and so aren't present out of the box:
+
+1. **The source dataset.** Download the Kaggle
+   ["Telco Customer Churn"](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
+   dataset CSV and save it to `data/source/telco_churn.csv` — this is the
+   exact path the `raw_churn` asset expects
+   (see `src/churn_mlops/assets/churn.py`).
+2. **Trained, promoted models.** The serving API loads models from MLflow's
+   `@production` alias; until the pipeline has run once, `/predict/churn`
+   and `/forecast/mrr` return `503`. Materialize the full asset pipeline
+   first, either from the `dagster dev` UI ("Materialize all") or from the
+   command line:
+
+   ```bash
+   dagster asset materialize --select "*" -m churn_mlops.definitions
+   ```
+
+   This trains and promotes both the churn and forecast models before you
+   start the API.
+
+Want to try the project without any of that setup? **`pytest` works
+standalone on a bare clone**, with nothing beyond `pip install` above — all
+101 tests use `tmp_path` and mocks, no real dataset or trained models
+required. It's the fastest way to see the project actually run.
 
 ## Running it
 
@@ -58,10 +91,10 @@ pip install --no-deps -e .
 # Orchestration UI — materialize assets, inspect the pipeline graph
 dagster dev
 
-# Serving API
+# Serving API (after the pipeline has been materialized — see Prerequisites)
 uvicorn churn_mlops.serving.app:app --reload
 
-# Tests
+# Tests — no prerequisites needed
 pytest
 ```
 
