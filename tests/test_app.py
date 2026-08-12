@@ -90,6 +90,43 @@ def test_forecast_mrr_returns_valid_response_when_model_loaded(tmp_path, monkeyp
     assert body["forecast_total_mrr"] == 54.0 + 32.0
 
 
+def _write_forecast_features_with_churned_customer_parquet(tmp_path):
+    df = pd.DataFrame({
+        "customerID": ["active", "churned"],
+        "month": [4, 4],
+        "lag_1": [50.0, 30.0],
+        "lag_2": [48.0, 29.0],
+        "lag_3": [47.0, 28.0],
+        "rolling_3mo_mean": [48.33, 29.0],
+        "Contract": ["Month-to-month", "One year"],
+        "InternetService": ["DSL", "Fiber optic"],
+        "PaymentMethod": ["Electronic check", "Mailed check"],
+        "TechSupport": ["No", "Yes"],
+        # "churned" customer's terminal row has target_mrr == 0 (the churn-drop row),
+        # so it must be excluded from the forecast seed.
+        "target_mrr": [52.0, 0.0],
+    })
+    path = tmp_path / "forecast_features.parquet"
+    df.to_parquet(path)
+    return str(path)
+
+
+def test_forecast_mrr_excludes_churned_customer_seed_rows(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        app_module, "FORECAST_FEATURES_PATH", _write_forecast_features_with_churned_customer_parquet(tmp_path)
+    )
+    app_module.app.state.forecast_model = _FakeForecastModel()
+    client = TestClient(app_module.app)
+
+    response = client.get("/forecast/mrr", params={"horizon": 1})
+
+    assert response.status_code == 200
+    body = response.json()
+    # Only "active" (lag_1=50.0) should seed the forecast; "churned" (target_mrr=0.0)
+    # must be excluded, so the total is just active's single-step prediction.
+    assert body["forecast_total_mrr"] == 51.0
+
+
 def test_forecast_mrr_returns_503_when_model_not_loaded(tmp_path, monkeypatch):
     monkeypatch.setattr(app_module, "FORECAST_FEATURES_PATH", _write_forecast_features_parquet(tmp_path))
     app_module.app.state.forecast_model = None

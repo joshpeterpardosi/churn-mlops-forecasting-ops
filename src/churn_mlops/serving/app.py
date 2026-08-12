@@ -75,6 +75,10 @@ def forecast_mrr(horizon: int = Query(ge=1, le=24)):
         .tail(1)
         .reset_index(drop=True)
     )
+    # A customer's terminal row has target_mrr == 0 only at the month they churned
+    # (per the data layer's mrr_generation.py design). Excluding those rows keeps
+    # already-churned customers from being forecast forward as if still active.
+    seed_df = seed_df[seed_df["target_mrr"] != 0].reset_index(drop=True)
 
     def predict_fn(df: pd.DataFrame):
         return app.state.forecast_model.predict(None, df[FORECAST_FEATURE_COLUMNS])
