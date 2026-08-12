@@ -35,3 +35,31 @@ def test_wrong_type_rejected():
     kwargs["MonthlyCharges"] = "not-a-number"
     with pytest.raises(ValidationError):
         ChurnPredictRequest(**kwargs)
+
+
+def test_invalid_contract_rejected():
+    kwargs = _valid_kwargs()
+    kwargs["Contract"] = "month-to-month"  # wrong case, not in allowed set
+    with pytest.raises(ValidationError):
+        ChurnPredictRequest(**kwargs)
+
+
+def test_invalid_internet_service_rejected():
+    kwargs = _valid_kwargs()
+    kwargs["InternetService"] = "Cable"
+    with pytest.raises(ValidationError):
+        ChurnPredictRequest(**kwargs)
+
+
+def test_invalid_payment_method_rejected():
+    kwargs = _valid_kwargs()
+    kwargs["PaymentMethod"] = "Cash"
+    with pytest.raises(ValidationError):
+        ChurnPredictRequest(**kwargs)
+
+
+def test_invalid_tech_support_rejected():
+    kwargs = _valid_kwargs()
+    kwargs["TechSupport"] = "Maybe"
+    with pytest.raises(ValidationError):
+        ChurnPredictRequest(**kwargs)
