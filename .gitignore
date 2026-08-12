@@ -23,3 +23,8 @@ mlruns/
 # Drift report HTML — generated at runtime by the drift_report asset,
 # never source-controlled.
 reports/
+
+# Local virtual environment — created only to generate requirements-lock.txt
+# from a clean dependency closure, not the global interpreter. Never
+# source-controlled.
+.venv/
