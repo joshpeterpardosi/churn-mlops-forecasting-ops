@@ -36,7 +36,7 @@ train, track, serve, monitor, retrain.
 | Data layer | Dagster assets: raw ingestion, validation, feature table join |
 | Churn model | LightGBM classifier, tracked and auto-promoted via MLflow |
 | Forecast model | LightGBM regression on lag features, same MLflow promotion path |
-| Serving | FastAPI: `POST /predict/churn`, `GET /forecast/mrr?horizon=N` |
+| Serving | FastAPI: `POST /predict/churn`, `GET /forecast/mrr?horizon=N`, plus an interactive demo UI at `GET /` |
 | Monitoring | Evidently drift reports + a Dagster sensor that triggers retraining |
 | CI/CD | GitHub Actions: lint (ruff), test (pytest), Docker build |
 
@@ -97,6 +97,10 @@ uvicorn churn_mlops.serving.app:app --reload
 # Tests — no prerequisites needed
 pytest
 ```
+
+Once the API is running, open `http://localhost:8000/` in a browser for an
+interactive demo — real forms for both endpoints, wired to the live models,
+no separate setup needed.
 
 ## Requirements
 

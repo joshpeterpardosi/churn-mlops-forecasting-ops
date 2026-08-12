@@ -28,3 +28,6 @@ reports/
 # from a clean dependency closure, not the global interpreter. Never
 # source-controlled.
 .venv/
+
+# graphify output — local only, never pushed
+graphify-out/

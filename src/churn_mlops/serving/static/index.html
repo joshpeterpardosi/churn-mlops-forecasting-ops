@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>churn-mlops-forecasting-ops — live model demo</title>
+<meta name="description" content="Try the production churn and MRR forecast models over their real FastAPI endpoints." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/static/tokens.css" />
+<link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="nav__inner">
+    <a class="nav__wordmark" href="/">churn-mlops<span class="nav__wordmark-dim">-forecasting-ops</span></a>
+    <a class="nav__link" href="https://github.com/joshpeterpardosi/churn-mlops-forecasting-ops" target="_blank" rel="noopener">
+      GitHub<span class="sr-only"> (opens in new tab)</span>
+    </a>
+  </div>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="hero__inner">
+      <div class="hero__copy reveal">
+        <p class="eyebrow">MODEL SERVING · LIVE DEMO</p>
+        <h1 class="hero__title">Two ML models,<br />served live over HTTP.</h1>
+        <p class="hero__lede">
+          A churn classifier and an MRR forecaster, both loaded straight from the MLflow model
+          registry's <code>production</code> alias and served by this FastAPI app. No mocked
+          responses anywhere on this page — every result below is a real request.
+        </p>
+        <a class="btn btn--primary" href="#churn">Try the churn predictor ↓</a>
+      </div>
+
+      <div class="hero__demo reveal" style="--reveal-delay: 120ms">
+        <div class="code-card" id="hero-card">
+          <div class="code-card__bar">
+            <span class="code-card__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="code-card__filename">POST /predict/churn</span>
+            <span class="status-chip" id="hero-status" data-state="loading">…</span>
+          </div>
+          <pre class="code-card__body"><code id="hero-body">loading example request…</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tool" id="churn">
+    <div class="tool__inner">
+      <div class="tool__intro reveal">
+        <p class="eyebrow">01 · CHURN</p>
+        <h2 class="tool__title">Will this customer churn?</h2>
+        <p class="tool__lede">Fill in a customer profile and send it to <code>POST /predict/churn</code>.</p>
+      </div>
+
+      <div class="tool__grid">
+        <form class="panel reveal" id="churn-form" novalidate>
+          <div class="field-grid">
+            <label class="field">
+              <span class="field__label">Tenure (months)</span>
+              <input type="number" name="tenure" min="0" step="1" value="12" required />
+            </label>
+
+            <label class="field">
+              <span class="field__label">Contract</span>
+              <select name="Contract" required>
+                <option value="Month-to-month">Month-to-month</option>
+                <option value="One year">One year</option>
+                <option value="Two year">Two year</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field__label">Monthly charges (USD)</span>
+              <input type="number" name="MonthlyCharges" min="0" step="0.01" value="65.50" required />
+            </label>
+
+            <label class="field">
+              <span class="field__label">Total charges to date (USD)</span>
+              <input type="number" name="TotalCharges" min="0" step="0.01" value="786.00" required />
+            </label>
+
+            <label class="field">
+              <span class="field__label">Internet service</span>
+              <select name="InternetService" required>
+                <option value="DSL">DSL</option>
+                <option value="Fiber optic">Fiber optic</option>
+                <option value="No">No</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field__label">Payment method</span>
+              <select name="PaymentMethod" required>
+                <option value="Electronic check">Electronic check</option>
+                <option value="Mailed check">Mailed check</option>
+                <option value="Bank transfer (automatic)">Bank transfer (automatic)</option>
+                <option value="Credit card (automatic)">Credit card (automatic)</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field__label">Tech support</span>
+              <select name="TechSupport" required>
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+                <option value="No internet service">No internet service</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field__label">Current MRR (USD)</span>
+              <input type="number" name="current_mrr" min="0" step="0.01" value="65.50" required />
+            </label>
+
+            <label class="field">
+              <span class="field__label">Trailing 3-month avg MRR (USD)</span>
+              <input type="number" name="trailing_3mo_avg_mrr" min="0" step="0.01" value="63.20" required />
+            </label>
+          </div>
+
+          <div class="form__footer">
+            <p class="form__error" id="churn-error" role="alert" hidden></p>
+            <button class="btn btn--primary" type="submit" id="churn-submit" data-state="idle">
+              <span class="btn__label">Predict churn</span>
+              <span class="btn__spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+        </form>
+
+        <div class="panel panel--result reveal" style="--reveal-delay: 100ms">
+          <div class="code-card" id="churn-card">
+            <div class="code-card__bar">
+              <span class="code-card__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="code-card__filename">response</span>
+              <span class="status-chip" id="churn-status" data-state="idle">—</span>
+            </div>
+            <pre class="code-card__body"><code id="churn-body">Submit the form to call the real endpoint.</code></pre>
+            <p class="risk-readout" id="churn-risk" hidden></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tool tool--alt" id="forecast">
+    <div class="tool__inner">
+      <div class="tool__intro reveal">
+        <p class="eyebrow">02 · FORECAST</p>
+        <h2 class="tool__title">Where's total MRR headed?</h2>
+        <p class="tool__lede">
+          Pick a horizon and send it to <code>GET /forecast/mrr</code>. The model recursively
+          forecasts every active customer forward, month by month, then sums the fleet.
+        </p>
+      </div>
+
+      <div class="tool__grid tool__grid--forecast">
+        <form class="panel reveal" id="forecast-form" novalidate>
+          <label class="field">
+            <span class="field__label">Horizon (months)</span>
+            <input type="number" name="horizon" min="1" max="24" step="1" value="12" required />
+            <span class="field__hint">most plans run 6–12 months out — up to 24 supported</span>
+          </label>
+
+          <div class="form__footer">
+            <p class="form__error" id="forecast-error" role="alert" hidden></p>
+            <button class="btn btn--primary" type="submit" id="forecast-submit" data-state="idle">
+              <span class="btn__label">Run forecast</span>
+              <span class="btn__spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+        </form>
+
+        <div class="panel panel--result reveal" style="--reveal-delay: 100ms">
+          <div class="code-card" id="forecast-card">
+            <div class="code-card__bar">
+              <span class="code-card__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span class="code-card__filename">response</span>
+              <span class="status-chip" id="forecast-status" data-state="idle">—</span>
+            </div>
+            <pre class="code-card__body"><code id="forecast-body">Run a forecast to call the real endpoint.</code></pre>
+            <p class="usd-readout" id="forecast-usd" hidden></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band reveal">
+    <div class="band__inner">
+      <p class="eyebrow eyebrow--on-dark">HOW IT WORKS</p>
+      <div class="band__steps">
+        <div class="band__step">
+          <span class="band__num">01</span>
+          <h3>Dagster trains</h3>
+          <p>Assets pull the raw data, build features, and train both models on a schedule.</p>
+        </div>
+        <div class="band__step">
+          <span class="band__num">02</span>
+          <h3>MLflow registers</h3>
+          <p>Each run is logged and compared against the current <code>production</code> alias; better models get promoted.</p>
+        </div>
+        <div class="band__step">
+          <span class="band__num">03</span>
+          <h3>FastAPI serves</h3>
+          <p>This app loads the <code>production</code> alias at startup and answers every request on this page.</p>
+        </div>
+      </div>
+      <p class="band__footnote">101 automated tests cover the full pipeline, from raw data to this page.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer__inner">
+    <span>churn-mlops-forecasting-ops</span>
+    <a href="https://github.com/joshpeterpardosi/churn-mlops-forecasting-ops" target="_blank" rel="noopener">Source on GitHub</a>
+    <span class="footer__dim">Built solo by Josh Pardosi</span>
+  </div>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

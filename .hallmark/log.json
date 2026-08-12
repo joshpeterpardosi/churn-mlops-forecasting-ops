@@ -1,0 +1,15 @@
+{
+  "pages": [
+    {
+      "route": "/",
+      "file": "src/churn_mlops/serving/static/index.html",
+      "genre": "modern-minimal",
+      "theme": "cobalt",
+      "macrostructure": "workbench",
+      "nav": "cobalt-bordered (adapted N9 spirit, cmd-k dropped: single-page tool, nothing to search)",
+      "footer": "ft2-inline-single-line",
+      "enrichment": "cobalt code-is-the-hero, live-wired (real fetch() to real endpoints, not scripted type-in)",
+      "date": "2026-08-13"
+    }
+  ]
+}

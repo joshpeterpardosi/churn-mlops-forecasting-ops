@@ -1,11 +1,14 @@
 import logging
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import mlflow
 import mlflow.pyfunc
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from churn_mlops.lib.churn_model import FEATURE_COLUMNS as CHURN_FEATURE_COLUMNS
 from churn_mlops.lib.forecast_model import FEATURE_COLUMNS as FORECAST_FEATURE_COLUMNS
@@ -14,6 +17,8 @@ from churn_mlops.lib.recursive_forecast import recursive_forecast
 from churn_mlops.serving.schemas import ChurnPredictRequest, ChurnPredictResponse
 
 logger = logging.getLogger(__name__)
+
+STATIC_DIR = Path(__file__).parent / "static"
 
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
 CHURN_MODEL_URI = "models:/churn_model@production"
@@ -45,6 +50,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/")
+def demo_ui():
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.post("/predict/churn", response_model=ChurnPredictResponse)
