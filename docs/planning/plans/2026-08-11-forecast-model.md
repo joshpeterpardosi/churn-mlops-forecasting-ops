@@ -1,7 +1,5 @@
 # Forecast Model Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Add `forecast_features` and `forecast_model` Dagster assets that train a per-customer MRR regression on lag features, track/register/promote it via a new shared MLflow promotion helper, and refactor `churn_model` onto that same helper.
 
 **Architecture:** `forecast_features` (pure function + asset) builds lag/rolling/static features from `validated_mrr` + `feature_table`. `forecast_model` (pure function + asset) trains `LGBMRegressor` on a time-based split and tracks it in MLflow. A new `lib/mlflow_registry.py` centralizes the promote-if-better comparison, used by both `forecast_model` and a refactored `churn_model`.

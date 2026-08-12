@@ -1,7 +1,5 @@
 # Monitoring Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Log every `POST /predict/churn` prediction, add a Dagster `drift_report` asset that runs Evidently data-drift + prediction-drift against the training baseline, and a `retrain_sensor` that fires a `churn_model` retrain when drift is detected.
 
 **Architecture:** `predict_churn` appends each prediction to a local Parquet log (pure logging function, best-effort — never breaks the HTTP response). `drift_report` (Dagster asset) reads that log plus `feature_table`, runs an Evidently report via a pure wrapper function, writes an HTML report, and returns drift metadata. `retrain_sensor` reads `drift_report`'s latest materialization metadata from the Dagster event log and fires a `RunRequest` for `churn_model` when drift was detected, using the materialization's own storage ID as a dedup cursor.

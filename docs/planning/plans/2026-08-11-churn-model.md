@@ -1,7 +1,5 @@
 # Churn Model Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Add a `churn_model` Dagster asset that trains a LightGBM classifier on `feature_table`, tracks the run in MLflow, and auto-promotes it to Production when it beats the current Production version's ROC-AUC.
 
 **Architecture:** One pure function (`train_churn_model`) does the ML work with zero MLflow imports; one Dagster asset (`churn_model`) owns all MLflow interaction (logging, registration, promotion comparison). Same split as the data layer's `lib/`/`assets/` pattern.
