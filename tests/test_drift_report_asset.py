@@ -48,7 +48,7 @@ def test_drift_report_materializes_and_writes_html_with_predictions(tmp_path, mo
     monkeypatch.setattr(drift_report_module, "DRIFT_REPORT_HTML_PATH", str(html_path))
 
     rng = np.random.default_rng(1)
-    n = 50
+    n = 150
     predictions_df = pd.DataFrame({
         "tenure": rng.integers(0, 72, size=n),
         "Contract": rng.choice(["Month-to-month", "One year", "Two year"], size=n),
@@ -62,7 +62,7 @@ def test_drift_report_materializes_and_writes_html_with_predictions(tmp_path, mo
         "current_mrr": rng.uniform(0, 120, size=n),
         "trailing_3mo_avg_mrr": rng.uniform(0, 120, size=n),
         "churn_probability": rng.uniform(0, 1, size=n),
-        "churn_prediction": rng.integers(0, 2, size=n),
+        "churn_prediction": rng.integers(0, 2, size=n).astype(bool),
         "logged_at": ["2026-08-12T00:00:00+00:00"] * n,
     })
     predictions_df.to_parquet(predictions_path)

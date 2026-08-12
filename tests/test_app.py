@@ -1,8 +1,14 @@
 import pandas as pd
+import pytest
 from fastapi.testclient import TestClient
 
 import churn_mlops.serving.app as app_module
 from churn_mlops.serving.app import app
+
+
+@pytest.fixture(autouse=True)
+def _isolate_predictions_log(tmp_path, monkeypatch):
+    monkeypatch.setattr(app_module, "PREDICTIONS_LOG_PATH", str(tmp_path / "predictions.parquet"))
 
 
 class _FakeChurnModel:
