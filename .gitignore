@@ -19,3 +19,7 @@ interview/
 # churn_model asset and its tests, never source-controlled.
 mlflow.db
 mlruns/
+
+# Drift report HTML — generated at runtime by the drift_report asset,
+# never source-controlled.
+reports/
