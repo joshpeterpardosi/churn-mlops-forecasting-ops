@@ -1,5 +1,7 @@
 import pandas as pd
+
 from churn_mlops.lib.mrr_validation import validate_mrr
+
 
 def test_validate_mrr_passes_on_clean_data():
     df = pd.DataFrame({"customerID": ["1", "1"], "month": [0, 1], "MRR": [10.0, 10.0]})

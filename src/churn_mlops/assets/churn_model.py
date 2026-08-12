@@ -36,7 +36,7 @@ def churn_model(config: MlflowConfig, feature_table: pd.DataFrame) -> dict:
         # anyway). The wrapper below casts internally so callers don't need
         # to know about the category-dtype requirement at all.
         cols_to_uncast = [col for col in CATEGORICAL_COLUMNS if col in X_eval.columns]
-        plain_dtype_example = X_eval.head(5).astype({col: "object" for col in cols_to_uncast})
+        plain_dtype_example = X_eval.head(5).astype(dict.fromkeys(cols_to_uncast, "object"))
         wrapped = CategoricalCastingModel(model, CATEGORICAL_COLUMNS)
         signature = mlflow.models.infer_signature(
             plain_dtype_example, wrapped.predict(None, plain_dtype_example)

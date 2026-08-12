@@ -82,7 +82,7 @@ def forecast_mrr(horizon: int = Query(ge=1, le=24)):
     try:
         forecast_features = pd.read_parquet(FORECAST_FEATURES_PATH)
     except FileNotFoundError:
-        raise HTTPException(status_code=503, detail="forecast_features data not available")
+        raise HTTPException(status_code=503, detail="forecast_features data not available") from None
 
     seed_df = (
         forecast_features.sort_values("month")

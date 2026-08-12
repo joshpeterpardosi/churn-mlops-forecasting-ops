@@ -1,6 +1,8 @@
 import pandas as pd
-from dagster import build_output_context, build_input_context
+from dagster import build_input_context, build_output_context
+
 from churn_mlops.io.parquet_io_manager import ParquetIOManager
+
 
 def test_round_trip(tmp_path):
     manager = ParquetIOManager(base_dir=str(tmp_path))

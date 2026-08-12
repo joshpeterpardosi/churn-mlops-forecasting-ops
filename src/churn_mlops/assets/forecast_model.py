@@ -35,7 +35,7 @@ def forecast_model(config: ForecastMlflowConfig, forecast_features: pd.DataFrame
         # logged input_example) would otherwise fail LightGBM's categorical
         # dtype check at predict time.
         cols_to_uncast = [col for col in CATEGORICAL_COLUMNS if col in X_eval.columns]
-        plain_dtype_example = X_eval.head(5).astype({col: "object" for col in cols_to_uncast})
+        plain_dtype_example = X_eval.head(5).astype(dict.fromkeys(cols_to_uncast, "object"))
         wrapped = CategoricalCastingModel(model, CATEGORICAL_COLUMNS)
         signature = infer_signature(plain_dtype_example, wrapped.predict(None, plain_dtype_example))
         model_info = mlflow.pyfunc.log_model(

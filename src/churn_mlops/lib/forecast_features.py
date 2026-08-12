@@ -15,11 +15,9 @@ def build_forecast_features(mrr_df: pd.DataFrame, feature_df: pd.DataFrame) -> p
 
     result = mrr_sorted.dropna(subset=["lag_1", "lag_2", "lag_3"]).copy()
 
-    static_features = feature_df[["customerID"] + STATIC_FEATURE_COLUMNS]
+    static_features = feature_df[["customerID", *STATIC_FEATURE_COLUMNS]]
     result = result.merge(static_features, on="customerID", how="left")
 
     return result[
-        ["customerID", "month", "lag_1", "lag_2", "lag_3", "rolling_3mo_mean"]
-        + STATIC_FEATURE_COLUMNS
-        + ["target_mrr"]
+        ["customerID", "month", "lag_1", "lag_2", "lag_3", "rolling_3mo_mean", *STATIC_FEATURE_COLUMNS, "target_mrr"]
     ]

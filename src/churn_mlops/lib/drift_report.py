@@ -5,7 +5,7 @@ from evidently.report import Report
 
 from churn_mlops.lib.churn_model import FEATURE_COLUMNS
 
-REPORT_COLUMNS = FEATURE_COLUMNS + ["Churn"]
+REPORT_COLUMNS = [*FEATURE_COLUMNS, "Churn"]
 
 
 def build_drift_report(reference_df: pd.DataFrame, current_df: pd.DataFrame) -> Report:

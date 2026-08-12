@@ -5,11 +5,11 @@ from churn_mlops.serving.schemas import ChurnPredictRequest
 
 
 def _valid_kwargs():
-    return dict(
-        tenure=5, Contract="Month-to-month", MonthlyCharges=50.0, TotalCharges=250.0,
-        InternetService="DSL", PaymentMethod="Electronic check", TechSupport="No",
-        current_mrr=50.0, trailing_3mo_avg_mrr=48.0,
-    )
+    return {
+        "tenure": 5, "Contract": "Month-to-month", "MonthlyCharges": 50.0, "TotalCharges": 250.0,
+        "InternetService": "DSL", "PaymentMethod": "Electronic check", "TechSupport": "No",
+        "current_mrr": 50.0, "trailing_3mo_avg_mrr": 48.0,
+    }
 
 
 def test_valid_request_parses():

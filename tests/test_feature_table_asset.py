@@ -1,8 +1,9 @@
-from dagster import materialize, RunConfig
-from churn_mlops.io.parquet_io_manager import ParquetIOManager
-from churn_mlops.assets.churn import raw_churn, validated_churn, validated_churn_check, RawChurnConfig
-from churn_mlops.assets.mrr import synthetic_mrr_raw, validated_mrr, validated_mrr_check
+from dagster import RunConfig, materialize
+
+from churn_mlops.assets.churn import RawChurnConfig, raw_churn, validated_churn, validated_churn_check
 from churn_mlops.assets.features import feature_table
+from churn_mlops.assets.mrr import synthetic_mrr_raw, validated_mrr, validated_mrr_check
+from churn_mlops.io.parquet_io_manager import ParquetIOManager
 
 ALL_ASSETS = [
     raw_churn, validated_churn, validated_churn_check,

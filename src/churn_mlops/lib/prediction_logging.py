@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -8,7 +8,7 @@ DEFAULT_PREDICTIONS_PATH = "data/predictions/churn_predictions.parquet"
 
 def log_prediction(row: dict, log_path: str = DEFAULT_PREDICTIONS_PATH) -> None:
     row = dict(row)
-    row["logged_at"] = datetime.now(timezone.utc).isoformat()
+    row["logged_at"] = datetime.now(UTC).isoformat()
 
     new_row_df = pd.DataFrame([row])
 

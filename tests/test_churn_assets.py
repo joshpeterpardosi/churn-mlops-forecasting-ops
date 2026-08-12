@@ -1,6 +1,7 @@
-from dagster import materialize, RunConfig
+from dagster import RunConfig, materialize
+
+from churn_mlops.assets.churn import RawChurnConfig, raw_churn, validated_churn, validated_churn_check
 from churn_mlops.io.parquet_io_manager import ParquetIOManager
-from churn_mlops.assets.churn import raw_churn, validated_churn, validated_churn_check, RawChurnConfig
 
 
 def _resources(tmp_path):

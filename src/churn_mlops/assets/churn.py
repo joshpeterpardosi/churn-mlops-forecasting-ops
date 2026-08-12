@@ -1,5 +1,6 @@
 import pandas as pd
-from dagster import asset, asset_check, AssetCheckResult, Config
+from dagster import AssetCheckResult, Config, asset, asset_check
+
 from churn_mlops.lib.churn_validation import clean_total_charges, map_churn_label, validate_churn
 
 

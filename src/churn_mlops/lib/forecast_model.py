@@ -5,7 +5,7 @@ from lightgbm import LGBMRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 CATEGORICAL_COLUMNS = ["Contract", "InternetService", "PaymentMethod", "TechSupport"]
-FEATURE_COLUMNS = ["lag_1", "lag_2", "lag_3", "rolling_3mo_mean"] + CATEGORICAL_COLUMNS
+FEATURE_COLUMNS = ["lag_1", "lag_2", "lag_3", "rolling_3mo_mean", *CATEGORICAL_COLUMNS]
 
 DEFAULT_PARAMS = {
     "n_estimators": 100,

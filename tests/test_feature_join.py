@@ -1,6 +1,8 @@
 import pandas as pd
+
 from churn_mlops.lib.feature_join import build_feature_table
 from churn_mlops.lib.mrr_generation import generate_mrr_series
+
 
 def _churn_df():
     return pd.DataFrame({

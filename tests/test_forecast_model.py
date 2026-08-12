@@ -29,7 +29,7 @@ def _synthetic_forecast_df(n_customers=30, months_per_customer=8, seed=0):
 
 def test_train_forecast_model_returns_expected_metrics():
     df = _synthetic_forecast_df()
-    model, metrics, X_test = train_forecast_model(df)
+    model, metrics, _X_test = train_forecast_model(df)
     assert isinstance(model, LGBMRegressor)
     assert set(metrics.keys()) == {"rmse", "mae", "baseline_rmse"}
     assert metrics["rmse"] >= 0
@@ -39,7 +39,7 @@ def test_train_forecast_model_returns_expected_metrics():
 
 def test_time_split_respects_order_per_customer():
     df = _synthetic_forecast_df()
-    model, metrics, X_test = train_forecast_model(df)
+    _model, _metrics, X_test = train_forecast_model(df)
     sorted_df = df.sort_values(["customerID", "month"])
     expected_last_indices = sorted_df.groupby("customerID").tail(1).index
     assert set(X_test.index) == set(expected_last_indices)
@@ -56,6 +56,6 @@ def test_single_row_customer_contributes_no_test_row():
         "target_mrr": 40.0,
     }])
     df = pd.concat([multi_df, single_row], ignore_index=True)
-    model, metrics, X_test = train_forecast_model(df)
+    _model, _metrics, X_test = train_forecast_model(df)
     solo_index = df[df["customerID"] == "solo"].index[0]
     assert solo_index not in X_test.index

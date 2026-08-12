@@ -1,5 +1,6 @@
 import pandas as pd
-from dagster import asset, asset_check, AssetCheckResult
+from dagster import AssetCheckResult, asset, asset_check
+
 from churn_mlops.lib.mrr_generation import generate_mrr_series
 from churn_mlops.lib.mrr_validation import validate_mrr
 

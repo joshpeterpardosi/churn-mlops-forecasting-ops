@@ -1,6 +1,7 @@
 import os
+
 import pandas as pd
-from dagster import IOManager, InputContext, OutputContext
+from dagster import InputContext, IOManager, OutputContext
 
 
 class ParquetIOManager(IOManager):
