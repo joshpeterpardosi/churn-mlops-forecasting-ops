@@ -8,14 +8,22 @@ services:
       - ./mlruns:/app/mlruns
     ports:
       - "5000:5000"
+    environment:
+      # mlflow 3.x's server rejects requests whose Host header (host:port,
+      # e.g. "mlflow:5000") isn't in this list (DNS-rebinding protection) —
+      # the api service reaches this container via the Docker Compose
+      # service name "mlflow", which isn't in mlflow's default allowlist
+      # (localhost/127.0.0.1 only). Wildcards match the port suffix.
+      - MLFLOW_SERVER_ALLOWED_HOSTS=mlflow:*,localhost:*,127.0.0.1:*
     command: >
       sh -c "pip install --no-cache-dir 'mlflow>=2.14' &&
-             mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /app/mlruns --host 0.0.0.0 --port 5000"
+             mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root mlflow-artifacts:/ --artifacts-destination /app/mlruns --serve-artifacts --host 0.0.0.0 --port 5000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 5
+      start_period: 240s
 
   api:
     build: .
