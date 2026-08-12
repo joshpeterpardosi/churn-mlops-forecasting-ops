@@ -1,10 +1,24 @@
 # docker-compose.yml
 services:
+  mlflow:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./mlflow.db:/app/mlflow.db
+      - ./mlruns:/app/mlruns
+    ports:
+      - "5000:5000"
+    command: >
+      sh -c "pip install --no-cache-dir mlflow>=2.14 &&
+             mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /app/mlruns --host 0.0.0.0 --port 5000"
+
   api:
     build: .
     ports:
       - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - mlflow
     volumes:
-      - ./mlflow.db:/app/mlflow.db
-      - ./mlruns:/app/mlruns
       - ./data:/app/data
