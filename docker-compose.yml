@@ -1,7 +1,7 @@
 # docker-compose.yml
 services:
   mlflow:
-    image: python:3.11-slim
+    image: python:3.13-slim
     working_dir: /app
     volumes:
       - ./mlflow.db:/app/mlflow.db
