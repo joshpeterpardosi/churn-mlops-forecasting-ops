@@ -170,3 +170,33 @@ def test_lifespan_sets_mlflow_tracking_uri_before_loading_models(monkeypatch):
         pass
 
     assert calls == [app_module.MLFLOW_TRACKING_URI]
+
+
+def test_predict_churn_logs_prediction_to_configured_path(tmp_path, monkeypatch):
+    app.state.churn_model = _FakeChurnModel()
+    log_path = tmp_path / "predictions.parquet"
+    monkeypatch.setattr(app_module, "PREDICTIONS_LOG_PATH", str(log_path))
+    client = TestClient(app)
+
+    response = client.post("/predict/churn", json=_valid_churn_payload())
+
+    assert response.status_code == 200
+    df = pd.read_parquet(log_path)
+    assert len(df) == 1
+    assert df.iloc[0]["churn_probability"] == 0.73
+    assert df.iloc[0]["tenure"] == 5
+
+
+def test_predict_churn_still_succeeds_if_logging_fails(monkeypatch):
+    app.state.churn_model = _FakeChurnModel()
+
+    def _raise(*args, **kwargs):
+        raise RuntimeError("disk full")
+
+    monkeypatch.setattr(app_module, "log_prediction", _raise)
+    client = TestClient(app)
+
+    response = client.post("/predict/churn", json=_valid_churn_payload())
+
+    assert response.status_code == 200
+    assert response.json()["churn_probability"] == 0.73

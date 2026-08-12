@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException, Query
 
 from churn_mlops.lib.churn_model import FEATURE_COLUMNS as CHURN_FEATURE_COLUMNS
 from churn_mlops.lib.forecast_model import FEATURE_COLUMNS as FORECAST_FEATURE_COLUMNS
+from churn_mlops.lib.prediction_logging import log_prediction
 from churn_mlops.lib.recursive_forecast import recursive_forecast
 from churn_mlops.serving.schemas import ChurnPredictRequest, ChurnPredictResponse
 
@@ -18,6 +19,7 @@ MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
 CHURN_MODEL_URI = "models:/churn_model@production"
 FORECAST_MODEL_URI = "models:/forecast_model@production"
 FORECAST_FEATURES_PATH = "data/features/forecast_features.parquet"
+PREDICTIONS_LOG_PATH = "data/predictions/churn_predictions.parquet"
 
 
 @asynccontextmanager
@@ -52,10 +54,23 @@ def predict_churn(request: ChurnPredictRequest):
 
     row = pd.DataFrame([request.model_dump()])[CHURN_FEATURE_COLUMNS]
     probability = float(app.state.churn_model.predict_proba(None, row)[0])
+    prediction = probability >= 0.5
+
+    try:
+        log_prediction(
+            {
+                **request.model_dump(),
+                "churn_probability": probability,
+                "churn_prediction": prediction,
+            },
+            log_path=PREDICTIONS_LOG_PATH,
+        )
+    except Exception:
+        logger.warning("Failed to log prediction", exc_info=True)
 
     return ChurnPredictResponse(
         churn_probability=probability,
-        churn_prediction=probability >= 0.5,
+        churn_prediction=prediction,
     )
 
 
