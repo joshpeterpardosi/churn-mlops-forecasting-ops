@@ -31,3 +31,12 @@ reports/
 
 # graphify output — local only, never pushed
 graphify-out/
+
+# Agent tooling — local only, never pushed
+.claude/
+.agents/
+.scratch/
+.hallmark/
+
+# Step-by-step build plans — local reference, never pushed
+docs/planning/plans/

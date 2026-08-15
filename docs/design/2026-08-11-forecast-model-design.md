@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-11
 **Status:** Approved, implemented, amended post-review (see below)
-**Parent spec:** [../../../IDEA.md](../../../IDEA.md)
+**Parent spec:** [0000-project-brief.md](0000-project-brief.md)
 **Sub-project:** 3 of 6 (forecast model — consumes the data layer's `validated_mrr` and `feature_table`)
 
 ## Amendment (2026-08-11, post-implementation review)
@@ -64,9 +64,9 @@ to Production — same operational pattern as the churn model
 (sub-project 2), sharing its MLflow promotion logic instead of
 duplicating it a second time.
 
-## Decisions carried from IDEA.md / prior sub-projects
+## Decisions carried from the project brief / prior sub-projects
 
-- Forecast model family: gradient boosting w/ lag features (IDEA.md)
+- Forecast model family: gradient boosting w/ lag features (the project brief)
 - MLflow tracking: local SQLite-backed store (`sqlite:///mlflow.db`), no
   `mlflow server` process required — same as sub-project 2
 - Promotion: modern alias API (`set_registered_model_alias` /
@@ -84,14 +84,14 @@ duplicating it a second time.
   forecast would need synthetic signup dates first — out of scope. This
   framing is also the natural fit for "gradient boosting w/ lag features"
   (lags of each customer's own series), where a calendar-aggregate
-  forecast would more naturally suit ARIMA/Prophet, which IDEA.md already
+  forecast would more naturally suit ARIMA/Prophet, which the project brief already
   passed over.
 - **Train/test split:** time-based, not random. For each customer, the
   last valid row (full 3-month lag history + target) is held out as test;
   everything earlier is train. Prevents a customer's later month leaking
   into training for their own earlier month.
 - **Lag depth:** 3 lags (`lag_1`, `lag_2`, `lag_3`) plus their rolling
-  3-month mean. Matches IDEA.md's "lag features" wording directly; deep
+  3-month mean. Matches the project brief's "lag features" wording directly; deep
   enough for signal, shallow enough that most customers retain usable
   history.
 - **Metric:** RMSE drives promotion (penalizes large misses more than
@@ -101,7 +101,7 @@ duplicating it a second time.
   customers).
 - **Feature scope:** lags + static features from `feature_table`
   (`Contract`, `InternetService`, `PaymentMethod`, `TechSupport`), not
-  lags alone. Matches IDEA.md's "share overlapping features" framing for
+  lags alone. Matches the project brief's "share overlapping features" framing for
   the two models, likely improves accuracy (contract type affects revenue
   stability), and reuses already-validated columns — no new validation
   logic needed.

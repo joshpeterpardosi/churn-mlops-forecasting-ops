@@ -1,7 +1,11 @@
-# churn-mlops-forecasting-ops — Project Idea
+# churn-mlops-forecasting-ops — Project Brief
 
-**Status:** Idea / design, not yet implemented
+**Status:** Implemented — see the [README](../../README.md) for the built system
 **Type:** Portfolio project (MLOps)
+
+The original design brief, kept as the parent document for the six stage specs
+in this folder. It records what the project set out to build and why; the specs
+record how each stage was designed.
 
 ## Goal
 
@@ -86,7 +90,7 @@ end to end: data → train → track → serve → monitor → retrain.
 - **API**: Pydantic input validation (422 on bad payload), 503 if model
   not loaded
 
-## Open Items for Implementation Phase
+## Open Items at Design Time — all resolved
 
 - ~~Pin exact churn dataset source~~ — **decided: Kaggle Telco Customer
   Churn**
@@ -98,5 +102,5 @@ end to end: data → train → track → serve → monitor → retrain.
 - ~~Define concrete drift threshold for retrain trigger~~ — **decided:
   Evidently `DataDriftPreset` default — dataset drift flagged when share of
   drifted columns ≥ 0.5; sensor reads this result directly**
-- Project folder location, git init, `gh` repo setup — to happen in the
-  desktop implementation session, not here
+- ~~Project folder location, git init, repo setup~~ — **done: public repo at
+  `joshpeterpardosi/churn-mlops-forecasting-ops`**

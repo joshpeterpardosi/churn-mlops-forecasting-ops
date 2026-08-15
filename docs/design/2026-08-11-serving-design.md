@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-11
 **Status:** Approved, pending implementation plan
-**Parent spec:** [../../../IDEA.md](../../../IDEA.md)
+**Parent spec:** [0000-project-brief.md](0000-project-brief.md)
 **Sub-project:** 4 of 6 (serving — consumes both models' `@production` aliases and `forecast_features`)
 
 ## Purpose
@@ -10,14 +10,14 @@
 Expose the churn and forecast models as a FastAPI service: `POST
 /predict/churn` for per-customer churn risk, `GET /forecast/mrr?horizon=N`
 for an N-month-ahead portfolio MRR forecast — containerized via Docker,
-consistent with IDEA.md's "everything local" pattern.
+consistent with the project brief's "everything local" pattern.
 
-## Decisions carried from IDEA.md / prior sub-projects
+## Decisions carried from the project brief / prior sub-projects
 
 - Endpoints: `POST /predict/churn`, `GET /forecast/mrr?horizon=N`
-  (IDEA.md)
+  (the project brief)
 - Pydantic input validation → 422 on bad payload; 503 if model not loaded
-  (IDEA.md)
+  (the project brief)
 - Both models already predict correctly on plain-dtype input via
   `CategoricalCastingModel` (`src/churn_mlops/lib/serving.py`, fixed in
   sub-project 3's final review) — no manual categorical casting needed at
@@ -81,7 +81,7 @@ FastAPI app (src/churn_mlops/serving/app.py)
   `predict_proba` method
 - `Dockerfile` (repo root) + `docker-compose.yml` (new, one `api` service
   for now — extensible for `dagster`/`mlflow`/`evidently` services in
-  later sub-projects per IDEA.md)
+  later sub-projects per the project brief)
 
 ## Components
 
@@ -161,9 +161,9 @@ FastAPI app (src/churn_mlops/serving/app.py)
 
 - Evidently monitoring + Dagster retrain sensor (sub-project 5)
 - CI/CD (GitHub Actions), `gh` repo push (sub-project 6)
-- Authentication/rate limiting — not requested by IDEA.md, portfolio-scale
+- Authentication/rate limiting — not requested by the project brief, portfolio-scale
   demo
 - `docker-compose` orchestration of `dagster dev` / `mlflow server` /
   Evidently services together — this sub-project adds only the `api`
-  service; the full multi-service compose file is implied by IDEA.md but
+  service; the full multi-service compose file is implied by the project brief but
   not required until later sub-projects need it

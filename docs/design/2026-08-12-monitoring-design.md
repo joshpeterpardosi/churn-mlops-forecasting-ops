@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-12
 **Status:** Approved, pending implementation plan
-**Parent spec:** [../../../IDEA.md](../../../IDEA.md)
+**Parent spec:** [0000-project-brief.md](0000-project-brief.md)
 **Sub-project:** 5 of 6 (monitoring — consumes serving's live predictions and the data layer's `feature_table`)
 
 ## Purpose
@@ -10,9 +10,9 @@
 Log every `POST /predict/churn` prediction, generate an Evidently data-drift
 + prediction-drift report comparing live predictions against the training
 baseline, and wire a Dagster sensor that triggers a `churn_model` retrain
-when drift crosses IDEA.md's pinned threshold.
+when drift crosses the project brief's pinned threshold.
 
-## Decisions carried from IDEA.md / prior sub-projects
+## Decisions carried from the project brief / prior sub-projects
 
 - Drift trigger: Evidently `DataDriftPreset` default, drifted-column share
   ≥ 0.5 (pinned in the data layer spec, sub-project 1)
@@ -47,7 +47,7 @@ when drift crosses IDEA.md's pinned threshold.
   probability/label distribution vs training baseline's actual `Churn`
   distribution, substituting for "target drift" since no live ground
   truth exists). This is a deliberate, documented scope reduction from
-  IDEA.md's original "data drift, target drift, model performance" list —
+  the project brief's original "data drift, target drift, model performance" list —
   full performance monitoring would need customers' actual churn outcomes
   to arrive later, which is a different sub-project's worth of plumbing
   (out of scope for this repo).

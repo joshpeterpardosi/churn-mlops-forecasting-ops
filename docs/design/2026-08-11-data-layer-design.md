@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-11
 **Status:** Approved, implemented, amended post-review (see below)
-**Parent spec:** [../../../IDEA.md](../../../IDEA.md)
+**Parent spec:** [0000-project-brief.md](0000-project-brief.md)
 **Sub-project:** 1 of 6 (data layer — foundation for churn model, forecast model,
 serving, monitoring, CI/CD)
 
@@ -32,7 +32,7 @@ Build the Dagster asset pipeline that ingests the Telco churn CSV and a
 synthetic MRR series, validates both, and produces a single feature table
 consumed by the churn classification model and the MRR forecast model.
 
-## Decisions carried from IDEA.md
+## Decisions carried from the project brief
 
 - Churn dataset: Kaggle Telco Customer Churn
 - MRR generation: step drop to 0 at churn month, flat before that, plus
@@ -54,7 +54,7 @@ raw_churn → validated_churn → synthetic_mrr_raw → validated_mrr → featur
   `data/features/`
 - Dagster `asset_checks` attached to `validated_churn` and `validated_mrr`,
   severity `ERROR` — a failed check blocks materialization of everything
-  downstream. Chosen over `WARN` because IDEA.md requires the pipeline to
+  downstream. Chosen over `WARN` because the project brief requires the pipeline to
   fail fast and never propagate bad data; `WARN` would let bad rows slip
   through silently.
 - `feature_table` joins `validated_churn` + `validated_mrr` on `customerID`

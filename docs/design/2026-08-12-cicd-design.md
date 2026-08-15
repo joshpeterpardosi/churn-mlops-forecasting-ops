@@ -57,17 +57,15 @@ Current `Dockerfile` pins `python:3.11-slim` (mismatched against the 3.13 decisi
 ### 5. README.md
 
 Repo currently has none. Contents:
-- One-paragraph project summary (churn + MRR forecasting MLOps loop, from `IDEA.md`'s Goal section).
-- Architecture diagram (reuse/adapt the ASCII diagram already in `IDEA.md`).
+- One-paragraph project summary (churn + MRR forecasting MLOps loop, from `0000-project-brief.md`'s Goal section).
+- Architecture diagram (reuse/adapt the ASCII diagram already in `0000-project-brief.md`).
 - Setup/run instructions: clone, `pip install -r requirements-lock.txt`, `dagster dev` (orchestration UI), `uvicorn churn_mlops.serving.app:app` (API), `pytest` (tests).
 - CI badge (GitHub Actions workflow status), added once the workflow exists and has run at least once for the badge URL to resolve.
-- Brief per-sub-project summary (the 6-stage roadmap, all done) linking to `docs/planning/specs/` for anyone who wants the full design history.
+- Brief per-sub-project summary (the 6-stage roadmap, all done) linking to `docs/design/` for anyone who wants the full design history.
 
 ### 6. Repo creation and publish
 
-`gh repo create churn-mlops-forecasting-ops --public --source=. --remote=origin`, then push `master`. Repo name matches `pyproject.toml`'s `name` field and the local folder. Sole-author commits, no AI co-author trailer (standing global rule, already followed on every commit in this project). This step requires explicit go-ahead at execution time — it's a repo-creation + push action, not something to run unprompted mid-plan.
-
-Two markdown/plan files were already scrubbed of internal AI-tooling references (commit `56021ac`) in preparation for this — the `docs/planning/plans/*.md` files no longer name the specific skill-invocation tooling used to build this project.
+`gh repo create churn-mlops-forecasting-ops --public --source=. --remote=origin`, then push `master`. Repo name matches `pyproject.toml`'s `name` field and the local folder. Sole-author commits throughout.
 
 ## Data Flow
 

@@ -40,8 +40,8 @@ train, track, serve, monitor, retrain.
 | Monitoring | Evidently drift reports + a Dagster sensor that triggers retraining |
 | CI/CD | GitHub Actions: lint (ruff), test (pytest), Docker build |
 
-Design docs and implementation plans for each stage are in
-[`docs/planning/`](docs/planning/).
+The design brief and a per-stage design spec for each of the six stages are in
+[`docs/design/`](docs/design/).
 
 ## Setup
 

@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-11
 **Status:** Approved, implemented, amended post-review (see below)
-**Parent spec:** [../../../IDEA.md](../../../IDEA.md)
+**Parent spec:** [0000-project-brief.md](0000-project-brief.md)
 **Sub-project:** 2 of 6 (churn model — consumes the data layer's `feature_table`)
 
 ## Amendment (2026-08-11, post-implementation review)
@@ -44,10 +44,10 @@ track every run in MLflow, and automatically promote the best run to
 Production so a later serving layer can load "the current model" without
 knowing which run produced it.
 
-## Decisions carried from IDEA.md / sub-project 1
+## Decisions carried from the project brief / sub-project 1
 
 - Dataset: Kaggle Telco Customer Churn, via `feature_table`
-  (`docs/planning/specs/2026-08-11-data-layer-design.md`) — 7043 rows, 10
+  (`docs/design/2026-08-11-data-layer-design.md`) — 7043 rows, 10
   columns, `current_mrr`/`trailing_3mo_avg_mrr` leak-free
 - Two models trained as separate Dagster assets, MLflow tracking +
   registry for both (this spec covers the churn model only; the forecast
@@ -68,7 +68,7 @@ knowing which run produced it.
   post-implementation to match reality). This is queried directly by the
   MLflow Python client — **no `mlflow server` process is required** for
   the Dagster asset to run. A `docker-compose`-managed `mlflow server` (per
-  IDEA.md) is for the UI and for other services to reach later; it is not
+  the project brief) is for the UI and for other services to reach later; it is not
   a dependency of this asset
 - Promotion rule: auto-promote a newly registered model version to
   Production if its ROC-AUC beats the current Production version's, or if
