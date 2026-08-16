@@ -11,9 +11,10 @@ REPORT_COLUMNS = [*FEATURE_COLUMNS, "Churn"]
 def build_drift_report(reference_df: pd.DataFrame, current_df: pd.DataFrame) -> Report:
     # current_df["Churn"] here is actually the model's *predicted* label (proxying for a
     # true label, since no ground truth exists in production). This introduces a systematic
-    # offset versus the reference's true label distribution because of the 0.5 classification
-    # threshold — not a bug, but worth knowing if TargetDriftPreset's drift signal looks
-    # noisier than expected.
+    # offset versus the reference's true label distribution because of the serving decision
+    # threshold (see CategoricalCastingModel.threshold / select_operating_point — chosen from
+    # error cost, not the sklearn default of 0.5) — not a bug, but worth knowing if
+    # TargetDriftPreset's drift signal looks noisier than expected.
     column_mapping = ColumnMapping(target="Churn")
 
     report = Report(metrics=[DataDriftPreset(columns=FEATURE_COLUMNS), TargetDriftPreset()])
