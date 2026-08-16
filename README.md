@@ -34,7 +34,7 @@ train, track, serve, monitor, retrain.
 | Stage | What it does |
 |---|---|
 | Data layer | Dagster assets: raw ingestion, validation, feature table join |
-| Churn model | LightGBM classifier, tracked and auto-promoted via MLflow |
+| Churn model | LightGBM classifier, tracked and auto-promoted via MLflow. Decision threshold chosen from the cost of a missed churner, not left at 0.5 |
 | Forecast model | LightGBM regression on lag features, same MLflow promotion path |
 | Serving | FastAPI: `POST /predict/churn`, `GET /forecast/mrr?horizon=N`, plus an interactive demo UI at `GET /` |
 | Monitoring | Evidently drift reports + a Dagster sensor that triggers retraining |
@@ -42,6 +42,25 @@ train, track, serve, monitor, retrain.
 
 The design brief and a per-stage design spec for each of the six stages are in
 [`docs/design/`](docs/design/).
+
+### Operating point
+
+A classifier returns a probability; 0.5 is a library default, not a decision. For
+churn the errors cost very different amounts — a missed churner loses the account,
+a false alarm costs a phone call — so the threshold is chosen by minimising
+expected cost at a 10:1 ratio, subject to a precision floor that keeps the
+retention list credible. Full reasoning, including the rule that was tried first
+and rejected, is in
+[`docs/design/2026-08-16-churn-operating-point.md`](docs/design/2026-08-16-churn-operating-point.md).
+
+| | at 0.50 (default) | at 0.25 (chosen) |
+|---|---|---|
+| recall | 0.5053 | **0.8021** |
+| precision | 0.6517 | 0.5000 |
+| roc_auc | 0.8401 | 0.8401 |
+
+The threshold travels with the model, so serving applies the point that training
+chose rather than re-deciding it.
 
 ## Setup
 

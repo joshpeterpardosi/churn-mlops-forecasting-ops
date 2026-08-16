@@ -83,3 +83,33 @@ def test_predict_proba_casts_categorical_columns_and_returns_positive_class():
 
     assert inner.seen_dtypes["Contract"].name == "category"
     assert list(result) == [0.7, 0.7]
+
+
+def test_predict_applies_the_configured_threshold():
+    """The stub always returns probability 0.7. A threshold below it must flag,
+    a threshold above it must not — so the wrapper is genuinely using the value
+    it was given rather than LightGBM's implicit 0.5."""
+    plain_input = pd.DataFrame({"Contract": ["Month-to-month"], "tenure": [1]})
+
+    flags = CategoricalCastingModel(
+        _RecordingProbaModel(), categorical_columns=["Contract"], threshold=0.25
+    ).predict(None, plain_input)
+    assert list(flags) == [True]
+
+    holds = CategoricalCastingModel(
+        _RecordingProbaModel(), categorical_columns=["Contract"], threshold=0.9
+    ).predict(None, plain_input)
+    assert list(holds) == [False]
+
+
+def test_predict_delegates_to_the_model_when_no_threshold_is_set():
+    """Regressors have no predict_proba, and the forecast model shares this
+    wrapper. With threshold left as None, predict must pass straight through."""
+    inner = _RecordingModel()
+    wrapped = CategoricalCastingModel(inner, categorical_columns=["Contract"])
+    plain_input = pd.DataFrame({"Contract": ["Month-to-month"], "tenure": [5]})
+
+    result = wrapped.predict(None, plain_input)
+
+    assert list(result) == [1]
+    assert inner.seen_dtypes["Contract"].name == "category"

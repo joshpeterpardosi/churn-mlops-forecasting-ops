@@ -65,7 +65,11 @@ def predict_churn(request: ChurnPredictRequest):
 
     row = pd.DataFrame([request.model_dump()])[CHURN_FEATURE_COLUMNS]
     probability = float(app.state.churn_model.predict_proba(None, row)[0])
-    prediction = probability >= 0.5
+    # The threshold is the model's, chosen at training time from the relative
+    # cost of a missed churner versus a needless retention call. Hardcoding 0.5
+    # here would quietly override that decision.
+    threshold = getattr(app.state.churn_model, "threshold", 0.5)
+    prediction = probability >= threshold
 
     try:
         log_prediction(

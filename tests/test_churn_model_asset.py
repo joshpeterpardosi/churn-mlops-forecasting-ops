@@ -63,7 +63,16 @@ def _fitted_stub_model():
 
 
 def _fixed_metrics(roc_auc):
-    return {"roc_auc": roc_auc, "accuracy": roc_auc, "precision": roc_auc, "recall": roc_auc, "f1": roc_auc}
+    return {
+        "roc_auc": roc_auc,
+        "threshold": 0.25,
+        "accuracy": roc_auc,
+        "precision": roc_auc,
+        "recall": roc_auc,
+        "f1": roc_auc,
+        "precision_at_default": roc_auc,
+        "recall_at_default": roc_auc,
+    }
 
 
 def _stub_train_return(roc_auc):

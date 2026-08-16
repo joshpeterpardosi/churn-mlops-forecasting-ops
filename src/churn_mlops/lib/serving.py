@@ -15,22 +15,34 @@ class CategoricalCastingModel(mlflow.pyfunc.PythonModel):
     and casts the categorical columns internally before delegating to the
     underlying fitted model, so the logged signature is honest and callers need no
     hidden preprocessing step.
+
+    For classifiers it also carries the decision threshold chosen at training
+    time. LightGBM's own ``predict`` would silently apply 0.5; the operating
+    point is a business decision, so it travels with the model rather than being
+    re-decided by whatever happens to call it. Leave ``threshold`` as ``None``
+    for regressors and for any classifier that really does want the default —
+    the wrapper then delegates to the underlying ``predict`` untouched.
     """
 
-    def __init__(self, model, categorical_columns: list[str]):
+    def __init__(
+        self, model, categorical_columns: list[str], threshold: float | None = None
+    ):
         self.model = model
         self.categorical_columns = categorical_columns
+        self.threshold = threshold
+
+    def _cast(self, model_input: pd.DataFrame) -> pd.DataFrame:
+        df = model_input.copy()
+        for col in self.categorical_columns:
+            if col in df.columns:
+                df[col] = df[col].astype("category")
+        return df
 
     def predict(self, context, model_input: pd.DataFrame, params=None):
-        df = model_input.copy()
-        for col in self.categorical_columns:
-            if col in df.columns:
-                df[col] = df[col].astype("category")
-        return self.model.predict(df)
+        df = self._cast(model_input)
+        if self.threshold is None:
+            return self.model.predict(df)
+        return self.model.predict_proba(df)[:, 1] >= self.threshold
 
     def predict_proba(self, context, model_input: pd.DataFrame, params=None):
-        df = model_input.copy()
-        for col in self.categorical_columns:
-            if col in df.columns:
-                df[col] = df[col].astype("category")
-        return self.model.predict_proba(df)[:, 1]
+        return self.model.predict_proba(self._cast(model_input))[:, 1]
