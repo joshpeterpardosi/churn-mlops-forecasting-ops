@@ -1,4 +1,4 @@
-# churn-mlops-forecasting-ops
+# Churn Prediction & Revenue Forecasting — MLOps Pipeline
 
 ![CI](https://github.com/joshpeterpardosi/churn-mlops-forecasting-ops/actions/workflows/ci.yml/badge.svg)
 
