@@ -6,6 +6,25 @@ An end-to-end MLOps loop for a SaaS subscription business: customer churn
 prediction and MRR/revenue forecasting, built as one pipeline — data,
 train, track, serve, monitor, retrain.
 
+## Headline result
+
+| Metric | Value |
+|---|---|
+| Churn model | LightGBM, ROC-AUC **0.8401** |
+| Decision threshold | 0.25, chosen by expected cost at a 10:1 miss-to-false-alarm ratio — not the 0.5 default |
+| Recall at the chosen point | **0.8021**, against 0.5053 at the default threshold |
+| Precision at the chosen point | 0.5000, held at the floor that keeps the retention list credible |
+| Serving | FastAPI, live predictions from the MLflow production-aliased model |
+| Retraining | Evidently drift sensor triggers a Dagster retrain run |
+| Tests | 101 standalone tests in CI, no dataset or trained model required |
+
+Moving the threshold from the library default to the cost-derived point
+converts 59% more churners caught, paid for with precision the retention
+team can still act on. The threshold is stored with the model, so serving
+applies the point training chose instead of re-deciding it — the reasoning,
+including the rule that was tried first and rejected, is in
+[`docs/design/2026-08-16-churn-operating-point.md`](docs/design/2026-08-16-churn-operating-point.md).
+
 ## Architecture
 
 ```
