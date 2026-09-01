@@ -40,7 +40,12 @@ class CategoricalCastingModel(mlflow.pyfunc.PythonModel):
 
     def predict(self, context, model_input: pd.DataFrame, params=None):
         df = self._cast(model_input)
-        if self.threshold is None:
+        # getattr, not self.threshold: models registered before the threshold
+        # was introduced unpickle without the attribute (unpickling restores
+        # __dict__ and never runs __init__), and serving loads those artifacts
+        # straight from the registry. Absent means "no threshold", as for a
+        # regressor.
+        if getattr(self, "threshold", None) is None:
             return self.model.predict(df)
         return self.model.predict_proba(df)[:, 1] >= self.threshold
 

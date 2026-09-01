@@ -113,3 +113,19 @@ def test_predict_delegates_to_the_model_when_no_threshold_is_set():
 
     assert list(result) == [1]
     assert inner.seen_dtypes["Contract"].name == "category"
+
+
+def test_predict_tolerates_a_model_pickled_before_threshold_existed():
+    """Models registered before the decision threshold was added unpickle
+    without a `threshold` attribute — unpickling restores `__dict__` directly
+    and never runs `__init__`. Serving loads those artifacts from the registry,
+    so predict must still delegate rather than raise AttributeError."""
+    inner = _RecordingModel()
+    wrapped = CategoricalCastingModel(inner, categorical_columns=["Contract"])
+    del wrapped.threshold  # what an artifact pickled before the change carries
+    plain_input = pd.DataFrame({"Contract": ["Month-to-month"], "tenure": [5]})
+
+    result = wrapped.predict(None, plain_input)
+
+    assert list(result) == [1]
+    assert inner.seen_dtypes["Contract"].name == "category"
