@@ -1,8 +1,6 @@
 from dagster import (
     AssetKey,
-    DagsterEventType,
     DefaultSensorStatus,
-    EventRecordsFilter,
     RunRequest,
     SensorEvaluationContext,
     SkipReason,
@@ -19,13 +17,9 @@ churn_retrain_job = define_asset_job("churn_retrain_job", selection=[churn_model
 
 @sensor(job=churn_retrain_job, default_status=DefaultSensorStatus.STOPPED)
 def retrain_sensor(context: SensorEvaluationContext):
-    event_records = context.instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=DRIFT_REPORT_ASSET_KEY,
-        ),
-        limit=1,
-    )
+    event_records = context.instance.fetch_materializations(
+        DRIFT_REPORT_ASSET_KEY, limit=1
+    ).records
 
     if not event_records:
         return SkipReason("No drift_report materialization found yet")
