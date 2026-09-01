@@ -16,7 +16,7 @@ train, track, serve, monitor, retrain.
 | Precision at the chosen point | 0.5000, held at the floor that keeps the retention list credible |
 | Serving | FastAPI, live predictions from the MLflow production-aliased model |
 | Retraining | Evidently drift sensor triggers a Dagster retrain run |
-| Tests | 101 standalone tests in CI, no dataset or trained model required |
+| Tests | 107 standalone tests in CI, no dataset or trained model required |
 
 Moving the threshold from the library default to the cost-derived point
 converts 59% more churners caught, paid for with precision the retention
@@ -120,7 +120,7 @@ and so aren't present out of the box:
 
 Want to try the project without any of that setup? **`pytest` works
 standalone on a bare clone**, with nothing beyond `pip install` above — all
-101 tests use `tmp_path` and mocks, no real dataset or trained models
+107 tests use `tmp_path` and mocks, no real dataset or trained models
 required. It's the fastest way to see the project actually run.
 
 ## Running it
